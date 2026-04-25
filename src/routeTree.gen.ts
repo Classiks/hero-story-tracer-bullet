@@ -11,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteRouteImport } from './routes/test/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StoryFlowIndexRouteImport } from './routes/story-flow/index'
 import { Route as ApiTestRouteRouteImport } from './routes/api/test/route'
+import { Route as StoryFlowonboardingStoryRouteImport } from './routes/story-flow/(onboarding)/story'
+import { Route as StoryFlowonboardingProblemRouteImport } from './routes/story-flow/(onboarding)/problem'
+import { Route as StoryFlowonboardingNameRouteImport } from './routes/story-flow/(onboarding)/name'
 
 const TestRouteRoute = TestRouteRouteImport.update({
   id: '/test',
@@ -23,9 +27,31 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoryFlowIndexRoute = StoryFlowIndexRouteImport.update({
+  id: '/story-flow/',
+  path: '/story-flow/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTestRouteRoute = ApiTestRouteRouteImport.update({
   id: '/api/test',
   path: '/api/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoryFlowonboardingStoryRoute =
+  StoryFlowonboardingStoryRouteImport.update({
+    id: '/story-flow/(onboarding)/story',
+    path: '/story-flow/story',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StoryFlowonboardingProblemRoute =
+  StoryFlowonboardingProblemRouteImport.update({
+    id: '/story-flow/(onboarding)/problem',
+    path: '/story-flow/problem',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StoryFlowonboardingNameRoute = StoryFlowonboardingNameRouteImport.update({
+  id: '/story-flow/(onboarding)/name',
+  path: '/story-flow/name',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -33,30 +59,68 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/test': typeof TestRouteRoute
   '/api/test': typeof ApiTestRouteRoute
+  '/story-flow/': typeof StoryFlowIndexRoute
+  '/story-flow/name': typeof StoryFlowonboardingNameRoute
+  '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
+  '/story-flow/story': typeof StoryFlowonboardingStoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/test': typeof TestRouteRoute
   '/api/test': typeof ApiTestRouteRoute
+  '/story-flow': typeof StoryFlowIndexRoute
+  '/story-flow/name': typeof StoryFlowonboardingNameRoute
+  '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
+  '/story-flow/story': typeof StoryFlowonboardingStoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/test': typeof TestRouteRoute
   '/api/test': typeof ApiTestRouteRoute
+  '/story-flow/': typeof StoryFlowIndexRoute
+  '/story-flow/(onboarding)/name': typeof StoryFlowonboardingNameRoute
+  '/story-flow/(onboarding)/problem': typeof StoryFlowonboardingProblemRoute
+  '/story-flow/(onboarding)/story': typeof StoryFlowonboardingStoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/test' | '/api/test'
+  fullPaths:
+    | '/'
+    | '/test'
+    | '/api/test'
+    | '/story-flow/'
+    | '/story-flow/name'
+    | '/story-flow/problem'
+    | '/story-flow/story'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/test' | '/api/test'
-  id: '__root__' | '/' | '/test' | '/api/test'
+  to:
+    | '/'
+    | '/test'
+    | '/api/test'
+    | '/story-flow'
+    | '/story-flow/name'
+    | '/story-flow/problem'
+    | '/story-flow/story'
+  id:
+    | '__root__'
+    | '/'
+    | '/test'
+    | '/api/test'
+    | '/story-flow/'
+    | '/story-flow/(onboarding)/name'
+    | '/story-flow/(onboarding)/problem'
+    | '/story-flow/(onboarding)/story'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   TestRouteRoute: typeof TestRouteRoute
   ApiTestRouteRoute: typeof ApiTestRouteRoute
+  StoryFlowIndexRoute: typeof StoryFlowIndexRoute
+  StoryFlowonboardingNameRoute: typeof StoryFlowonboardingNameRoute
+  StoryFlowonboardingProblemRoute: typeof StoryFlowonboardingProblemRoute
+  StoryFlowonboardingStoryRoute: typeof StoryFlowonboardingStoryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -75,11 +139,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/story-flow/': {
+      id: '/story-flow/'
+      path: '/story-flow'
+      fullPath: '/story-flow/'
+      preLoaderRoute: typeof StoryFlowIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/test': {
       id: '/api/test'
       path: '/api/test'
       fullPath: '/api/test'
       preLoaderRoute: typeof ApiTestRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story-flow/(onboarding)/story': {
+      id: '/story-flow/(onboarding)/story'
+      path: '/story-flow/story'
+      fullPath: '/story-flow/story'
+      preLoaderRoute: typeof StoryFlowonboardingStoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story-flow/(onboarding)/problem': {
+      id: '/story-flow/(onboarding)/problem'
+      path: '/story-flow/problem'
+      fullPath: '/story-flow/problem'
+      preLoaderRoute: typeof StoryFlowonboardingProblemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story-flow/(onboarding)/name': {
+      id: '/story-flow/(onboarding)/name'
+      path: '/story-flow/name'
+      fullPath: '/story-flow/name'
+      preLoaderRoute: typeof StoryFlowonboardingNameRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -89,6 +181,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   TestRouteRoute: TestRouteRoute,
   ApiTestRouteRoute: ApiTestRouteRoute,
+  StoryFlowIndexRoute: StoryFlowIndexRoute,
+  StoryFlowonboardingNameRoute: StoryFlowonboardingNameRoute,
+  StoryFlowonboardingProblemRoute: StoryFlowonboardingProblemRoute,
+  StoryFlowonboardingStoryRoute: StoryFlowonboardingStoryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

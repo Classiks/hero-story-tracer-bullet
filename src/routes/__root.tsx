@@ -1,6 +1,7 @@
 import {
   HeadContent,
   Scripts,
+  isNotFound,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
@@ -37,6 +38,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
     ],
   }),
+  errorComponent: RootErrorBoundary,
+  notFoundComponent: RootNotFound,
   shellComponent: RootDocument,
 })
 
@@ -63,5 +66,34 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function RootNotFound() {
+  return (
+    <main className="mx-auto max-w-xl px-6 py-16">
+      <h1 className="text-2xl font-semibold">Page not found</h1>
+      <p className="mt-3 text-sm text-neutral-600">
+        The route you requested does not exist.
+      </p>
+    </main>
+  )
+}
+
+function RootErrorBoundary({ error }: { error: Error }) {
+  if (isNotFound(error)) {
+    return <RootNotFound />
+  }
+
+  return (
+    <main className="mx-auto max-w-xl px-6 py-16">
+      <h1 className="text-2xl font-semibold">Something broke</h1>
+      <p className="mt-3 text-sm text-neutral-600">
+        The current route failed to load.
+      </p>
+      <pre className="mt-6 overflow-x-auto rounded bg-neutral-100 p-4 text-xs text-neutral-800">
+        {error.message}
+      </pre>
+    </main>
   )
 }
