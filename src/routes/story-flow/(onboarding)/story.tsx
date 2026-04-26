@@ -159,8 +159,15 @@ function StoryPresentation({
 }) {
   return (
     <div className="mt-10 pb-5">
+      <StoryImageBanner
+        imageData={imageData}
+        imageError={imageError}
+        imagePending={imagePending}
+        title={blueprint.title}
+      />
+
       <motion.h1
-        className="font-serif text-[clamp(2.25rem,13vw,3.85rem)] leading-[0.94] tracking-normal text-[#f7f0df]"
+        className="mt-7 font-serif text-[clamp(2.25rem,13vw,3.85rem)] leading-[0.94] tracking-normal text-[#f7f0df]"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -175,18 +182,6 @@ function StoryPresentation({
       >
         {blueprint.storyBlurb}
       </motion.p>
-
-      <motion.div
-        className="mt-7 rounded-[22px] border border-[#ffb74a]/25 bg-[#ffb74a]/10 p-4 text-[#f7f0df] shadow-[0_14px_32px_rgba(0,0,0,0.22)]"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.14 }}
-      >
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ffb74a]">
-          Next beat
-        </p>
-        <p className="mt-2 text-lg leading-snug">{blueprint.callToAction}</p>
-      </motion.div>
 
       <div className="mt-5 grid gap-3">
         <MetaphorCard
@@ -205,36 +200,54 @@ function StoryPresentation({
           value={blueprint.metaphors.reward}
         />
       </div>
-
-      <div className="mt-6 overflow-hidden rounded-[24px] border border-white/12 bg-white/[0.06] shadow-[0_18px_38px_rgba(0,0,0,0.3)]">
-        {imagePending && (
-          <div className="flex aspect-[4/5] flex-col items-center justify-center gap-4 px-8 text-center text-[#b5ae9d]">
-            <motion.div
-              animate={{ opacity: [0.45, 1, 0.45] }}
-              transition={{ duration: 1.4, repeat: Infinity }}
-            >
-              <ImageIcon className="size-9 text-cyan-100/70" />
-            </motion.div>
-            <p>The image is taking shape.</p>
-          </div>
-        )}
-
-        {imageError && (
-          <div className="flex aspect-[4/5] flex-col items-center justify-center gap-4 px-8 text-center text-[#b5ae9d]">
-            <Flame className="size-9 text-[#ffb74a]" />
-            <p>The story is ready, but the image could not be forged.</p>
-          </div>
-        )}
-
-        {imageData && (
-          <img
-            alt={blueprint.title}
-            className="aspect-[4/5] w-full object-cover"
-            src={`data:image/png;base64,${imageData}`}
-          />
-        )}
-      </div>
     </div>
+  )
+}
+
+function StoryImageBanner({
+  imageData,
+  imageError,
+  imagePending,
+  title,
+}: {
+  imageData: string | undefined
+  imageError: boolean
+  imagePending: boolean
+  title: string
+}) {
+  return (
+    <motion.div
+      className="-mx-2 overflow-hidden rounded-[24px] border border-white/12 bg-[#05070c]/55 shadow-[0_18px_38px_rgba(0,0,0,0.3)]"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      {imagePending && (
+        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-[#b5ae9d]">
+          <motion.div
+            animate={{ opacity: [0.45, 1, 0.45] }}
+            transition={{ duration: 1.4, repeat: Infinity }}
+          >
+            <ImageIcon className="size-9 text-cyan-100/70" />
+          </motion.div>
+          <p>The banner is taking shape.</p>
+        </div>
+      )}
+
+      {imageError && (
+        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-[#b5ae9d]">
+          <Flame className="size-9 text-[#ffb74a]" />
+          <p>The story is ready, but the banner could not be forged.</p>
+        </div>
+      )}
+
+      {imageData && (
+        <img
+          alt={title}
+          className="aspect-video w-full bg-[#05070c] object-contain"
+          src={`data:image/png;base64,${imageData}`}
+        />
+      )}
+    </motion.div>
   )
 }
 
@@ -381,7 +394,7 @@ Rules:
 
 function createStoryImagePrompt(blueprint: IStoryBlueprint) {
   return `
-Create a mobile-friendly heroic fantasy illustration for this motivational story.
+Create a wide 16:9 heroic fantasy banner illustration for this motivational story.
 
 Title: ${blueprint.title}
 Story: ${blueprint.storyBlurb}
@@ -390,7 +403,7 @@ Challenge metaphor: ${blueprint.metaphors.enemy}
 Reward metaphor: ${blueprint.metaphors.reward}
 
 Composition:
-- Portrait-friendly framing, strong central silhouette, readable on a phone.
+- Wide banner framing, strong central silhouette, readable on a phone.
 - The hero should be moving toward or facing the challenge.
 - Include a visual hint of the reward without cluttering the image.
 - Dramatic ember and cyan lighting, cinematic but not dark or muddy.

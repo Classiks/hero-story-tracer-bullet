@@ -9,7 +9,6 @@ export const Metaphors = z.object({
 export const StoryBlueprint = z.object({
   title: z.string().describe("A short, display-ready title for this user's hero story."),
   storyBlurb: z.string().describe("A vivid 2-3 sentence motivational story setup addressed to the user."),
-  callToAction: z.string().describe("A short sentence that invites the user to begin the next step."),
   metaphors: Metaphors,
 }).describe("A mobile presentation-ready hero story blueprint for motivational task support.")
 
