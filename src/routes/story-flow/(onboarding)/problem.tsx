@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useProblemStore } from '#/state/problem'; import { Input } from '#/components/ui/input';
+import { useOnboardingStore } from '#/state/onboarding';
+import { useShallow } from 'zustand/react/shallow';
+import { Input } from '#/components/ui/input';
 import { Button } from '#/components/ui/button';
 import { Send } from 'lucide-react';
 import { Route as NextStepRoute } from "#/routes/story-flow/(onboarding)/story";
@@ -10,7 +12,7 @@ export const Route = createFileRoute('/story-flow/(onboarding)/problem')({
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const { mainProblem, setMainProblem } = useProblemStore();
+  const [problem, setProblem] = useOnboardingStore(useShallow(state => [state.mainProblem, state.setMainProblem]));
 
   const handleSubmit: React.ComponentProps<'form'>['onSubmit'] = (event) => {
     event.preventDefault();
@@ -18,11 +20,13 @@ function RouteComponent() {
   };
 
   return <div>
-    <div>{mainProblem}</div>
+    <div>Input Problem</div>
+    <div>{problem}</div>
     <form onSubmit={handleSubmit} className="flex flex-row gap-3 px-10">
       <Input
-        value={mainProblem}
-        onChange={(e) => setMainProblem(e.target.value)}
+        autoFocus
+        value={problem}
+        onChange={(e) => setProblem(e.target.value)}
       />
       <Button type="submit">
         <Send />

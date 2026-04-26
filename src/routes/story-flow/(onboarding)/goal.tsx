@@ -4,15 +4,15 @@ import { useOnboardingStore } from '#/state/onboarding'
 import { useShallow } from "zustand/react/shallow";
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Send } from 'lucide-react';
-import { Route as NextStepRoute } from "#/routes/story-flow/(onboarding)/goal";
+import { Route as NextStepRoute } from "#/routes/story-flow/(onboarding)/problem";
 
-export const Route = createFileRoute('/story-flow/(onboarding)/name')({
+export const Route = createFileRoute('/story-flow/(onboarding)/goal')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const navigate = useNavigate();
-  const [name, setName] = useOnboardingStore(useShallow(state => [state.name, state.setName]));
+  const [goal, setGoal] = useOnboardingStore(useShallow(state => [state.goal, state.setGoal]));
 
   const handleSubmit: React.ComponentProps<'form'>['onSubmit'] = (event) => {
     event.preventDefault();
@@ -20,13 +20,13 @@ function RouteComponent() {
   };
 
   return <div>
-    <div>Input Name</div>
-    <div>{name}</div>
+    <div>Input Goal</div>
+    <div>{goal}</div>
     <form onSubmit={handleSubmit} className="flex flex-row gap-3 px-10">
       <Input
         autoFocus
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={goal}
+        onChange={(e) => setGoal(e.target.value)}
       />
       <Button type="submit">
         <Send />

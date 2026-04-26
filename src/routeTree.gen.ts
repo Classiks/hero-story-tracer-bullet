@@ -16,6 +16,9 @@ import { Route as ApiTestRouteRouteImport } from './routes/api/test/route'
 import { Route as StoryFlowonboardingStoryRouteImport } from './routes/story-flow/(onboarding)/story'
 import { Route as StoryFlowonboardingProblemRouteImport } from './routes/story-flow/(onboarding)/problem'
 import { Route as StoryFlowonboardingNameRouteImport } from './routes/story-flow/(onboarding)/name'
+import { Route as StoryFlowonboardingGoalRouteImport } from './routes/story-flow/(onboarding)/goal'
+import { Route as ApiGenerateImageRouteImport } from './routes/api/generate/image'
+import { Route as ApiGenerateDataRouteImport } from './routes/api/generate/data'
 
 const TestRouteRoute = TestRouteRouteImport.update({
   id: '/test',
@@ -54,12 +57,30 @@ const StoryFlowonboardingNameRoute = StoryFlowonboardingNameRouteImport.update({
   path: '/story-flow/name',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoryFlowonboardingGoalRoute = StoryFlowonboardingGoalRouteImport.update({
+  id: '/story-flow/(onboarding)/goal',
+  path: '/story-flow/goal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
+  id: '/api/generate/image',
+  path: '/api/generate/image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGenerateDataRoute = ApiGenerateDataRouteImport.update({
+  id: '/api/generate/data',
+  path: '/api/generate/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/test': typeof TestRouteRoute
   '/api/test': typeof ApiTestRouteRoute
   '/story-flow/': typeof StoryFlowIndexRoute
+  '/api/generate/data': typeof ApiGenerateDataRoute
+  '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
   '/story-flow/story': typeof StoryFlowonboardingStoryRoute
@@ -69,6 +90,9 @@ export interface FileRoutesByTo {
   '/test': typeof TestRouteRoute
   '/api/test': typeof ApiTestRouteRoute
   '/story-flow': typeof StoryFlowIndexRoute
+  '/api/generate/data': typeof ApiGenerateDataRoute
+  '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
   '/story-flow/story': typeof StoryFlowonboardingStoryRoute
@@ -79,6 +103,9 @@ export interface FileRoutesById {
   '/test': typeof TestRouteRoute
   '/api/test': typeof ApiTestRouteRoute
   '/story-flow/': typeof StoryFlowIndexRoute
+  '/api/generate/data': typeof ApiGenerateDataRoute
+  '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/(onboarding)/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/(onboarding)/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/(onboarding)/problem': typeof StoryFlowonboardingProblemRoute
   '/story-flow/(onboarding)/story': typeof StoryFlowonboardingStoryRoute
@@ -90,6 +117,9 @@ export interface FileRouteTypes {
     | '/test'
     | '/api/test'
     | '/story-flow/'
+    | '/api/generate/data'
+    | '/api/generate/image'
+    | '/story-flow/goal'
     | '/story-flow/name'
     | '/story-flow/problem'
     | '/story-flow/story'
@@ -99,6 +129,9 @@ export interface FileRouteTypes {
     | '/test'
     | '/api/test'
     | '/story-flow'
+    | '/api/generate/data'
+    | '/api/generate/image'
+    | '/story-flow/goal'
     | '/story-flow/name'
     | '/story-flow/problem'
     | '/story-flow/story'
@@ -108,6 +141,9 @@ export interface FileRouteTypes {
     | '/test'
     | '/api/test'
     | '/story-flow/'
+    | '/api/generate/data'
+    | '/api/generate/image'
+    | '/story-flow/(onboarding)/goal'
     | '/story-flow/(onboarding)/name'
     | '/story-flow/(onboarding)/problem'
     | '/story-flow/(onboarding)/story'
@@ -118,6 +154,9 @@ export interface RootRouteChildren {
   TestRouteRoute: typeof TestRouteRoute
   ApiTestRouteRoute: typeof ApiTestRouteRoute
   StoryFlowIndexRoute: typeof StoryFlowIndexRoute
+  ApiGenerateDataRoute: typeof ApiGenerateDataRoute
+  ApiGenerateImageRoute: typeof ApiGenerateImageRoute
+  StoryFlowonboardingGoalRoute: typeof StoryFlowonboardingGoalRoute
   StoryFlowonboardingNameRoute: typeof StoryFlowonboardingNameRoute
   StoryFlowonboardingProblemRoute: typeof StoryFlowonboardingProblemRoute
   StoryFlowonboardingStoryRoute: typeof StoryFlowonboardingStoryRoute
@@ -174,6 +213,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoryFlowonboardingNameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/story-flow/(onboarding)/goal': {
+      id: '/story-flow/(onboarding)/goal'
+      path: '/story-flow/goal'
+      fullPath: '/story-flow/goal'
+      preLoaderRoute: typeof StoryFlowonboardingGoalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generate/image': {
+      id: '/api/generate/image'
+      path: '/api/generate/image'
+      fullPath: '/api/generate/image'
+      preLoaderRoute: typeof ApiGenerateImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generate/data': {
+      id: '/api/generate/data'
+      path: '/api/generate/data'
+      fullPath: '/api/generate/data'
+      preLoaderRoute: typeof ApiGenerateDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -182,6 +242,9 @@ const rootRouteChildren: RootRouteChildren = {
   TestRouteRoute: TestRouteRoute,
   ApiTestRouteRoute: ApiTestRouteRoute,
   StoryFlowIndexRoute: StoryFlowIndexRoute,
+  ApiGenerateDataRoute: ApiGenerateDataRoute,
+  ApiGenerateImageRoute: ApiGenerateImageRoute,
+  StoryFlowonboardingGoalRoute: StoryFlowonboardingGoalRoute,
   StoryFlowonboardingNameRoute: StoryFlowonboardingNameRoute,
   StoryFlowonboardingProblemRoute: StoryFlowonboardingProblemRoute,
   StoryFlowonboardingStoryRoute: StoryFlowonboardingStoryRoute,
