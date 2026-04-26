@@ -15,5 +15,9 @@ cnt-rm:
 
 [group("Container")]
 cnt-run:
-  podman run --rm {{container_name}} -p 3001:3000
+  podman run \
+    --rm \
+    -p 3001:3000 \
+    --env-file .env.local \
+    {{container_name}}
   

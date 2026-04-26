@@ -4,7 +4,7 @@ import { useOnboardingStore } from '#/state/onboarding'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Crown, Flame, Gem, ImageIcon, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ImageIcon, ShieldAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { Route as NameRoute } from "#/routes/story-flow/(onboarding)/name";
 
@@ -200,6 +200,10 @@ function StoryPresentation({
           value={blueprint.metaphors.reward}
         />
       </div>
+
+      <Button className="w-full mt-10" disabled={!imageData} onClick={() => alert("Mehr gibts noch nicht :)")}>
+        Continue <ArrowRight />
+      </Button>
     </div>
   )
 }
@@ -406,7 +410,12 @@ Composition:
 - Wide banner framing, strong central silhouette, readable on a phone.
 - The hero should be moving toward or facing the challenge.
 - Include a visual hint of the reward without cluttering the image.
-- Dramatic ember and cyan lighting, cinematic but not dark or muddy.
-- Polished illustrated style, not text, not UI, no captions.
+- Cartoonish pixel-art inspired illustration with chunky shapes, clean silhouettes,
+  simplified details, and warm storybook charm.
+- Use a painterly pixel aesthetic, like a handcrafted animated short still, not a
+  screenshot from a video game.
+- Bright, adventurous lighting with clear color contrast, not dark or muddy.
+- No text, no captions, no UI, no menus, no buttons, no icons, no health bars, no
+  mana bars, no stats, no inventory, no minimap, no game HUD.
 `;
 }

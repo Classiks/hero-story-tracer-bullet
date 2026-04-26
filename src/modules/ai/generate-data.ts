@@ -11,6 +11,7 @@ export async function generateData<T extends z.ZodType>(messages: TextMessage[] 
     : messages;
 
   return await chat({
+    // @ts-ignore: trust me bro
     adapter: geminiText(DEFAULT__MODEL_TEXT),
     messages: resolvedMessages,
     outputSchema: schema
