@@ -17,17 +17,17 @@ export const RecommendedTask = z.object({
   reasoning: z.string().describe("A concise explanation of why this task is a useful next step."),
 }).describe("A hidden real-world task recommendation for the user's current goal and challenge.")
 
-export const QuestQuestion = z.object({
-  quest: z.string().describe("A short, display-ready quest title."),
-  content: z.string().describe("A story-aligned question or prompt that invites the user into the quest."),
-  task: z.string().describe("The plain real-world action being represented by the quest."),
+export const Quest = z.object({
+  quest: z.string().describe("A short in-world quest title with no literal productivity terms unless they already belong to the story world."),
+  content: z.string().describe("A 3-5 sentence immersive RPG-style quest brief with situation, stakes, immediate action, and emotional payoff."),
+  action: z.string().describe("A short in-world action instruction the hero should take now."),
   metaphors: z.array(z.object({
     real: z.string().describe("The real-world task, obstacle, or concept."),
     metaphor: z.string().describe("The story-world metaphor used to represent it."),
   })).describe("The key translations from real-world task language into story language."),
-}).describe("A user-facing quest question generated from a recommended real-world task.")
+}).describe("A user-facing motivational quest generated from a recommended real-world task.")
 
 export type IMetaphors = z.infer<typeof Metaphors>
 export type IStoryBlueprint = z.infer<typeof StoryBlueprint>
 export type IRecommendedTask = z.infer<typeof RecommendedTask>
-export type IQuestQuestion = z.infer<typeof QuestQuestion>
+export type IQuest = z.infer<typeof Quest>

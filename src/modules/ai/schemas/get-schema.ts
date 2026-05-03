@@ -1,12 +1,12 @@
 import { ZodType } from "zod";
-import { Metaphors, QuestQuestion, RecommendedTask, StoryBlueprint } from "./metaphors";
+import { Metaphors, Quest, RecommendedTask, StoryBlueprint } from "./metaphors";
 
-type availableSchemas = "metaphors" | "storyBlueprint" | "recommendedTask" | "questQuestion"
+type availableSchemas = "metaphors" | "storyBlueprint" | "recommendedTask" | "quest"
 const schemaMap: Record<availableSchemas, ZodType> = {
   metaphors: Metaphors,
   storyBlueprint: StoryBlueprint,
   recommendedTask: RecommendedTask,
-  questQuestion: QuestQuestion,
+  quest: Quest,
 }
 
 export function getSchema(id: availableSchemas): ZodType {

@@ -8,12 +8,13 @@ import {
   DialogTrigger,
 } from '#/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
-import { QuestQuestion, RecommendedTask, type IQuestQuestion, type IRecommendedTask, type IStoryBlueprint } from '#/modules/ai/schemas/metaphors'
+import { Quest, RecommendedTask, type IQuest, type IRecommendedTask, type IStoryBlueprint } from '#/modules/ai/schemas/metaphors'
 import { useStoryBlueprintQuery } from '#/modules/story-flow/story-generation'
 import { useOnboardingStore } from '#/state/onboarding'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { CircleQuestionMark, Loader2, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
 
 export const Route = createFileRoute('/story-flow/(loop)/quest')({
@@ -39,7 +40,7 @@ function RouteComponent() {
     name,
     storyBlueprint: storyQuery.data,
   })
-  const questQuery = useQuestQuestionQuery({
+  const questQuery = useQuestQuery({
     challenge,
     enabled: hasInputs && Boolean(storyQuery.data && taskQuery.data),
     goal,
@@ -91,7 +92,7 @@ function RouteComponent() {
         <>
           <h1 className="text-2xl font-semibold">Your Quest: {quest.quest}</h1>
           <p className="mt-4 text-muted-foreground">{quest.content}</p>
-          <p className="mt-4 font-medium">{quest.task}</p>
+          <p className="mt-4 font-medium">{quest.action}</p>
 
           <div className="mt-6 flex flex-row items-center gap-3">
             <Button>Accept</Button>
@@ -133,11 +134,13 @@ function QuestReasonDialog({
 }: {
   isRegeneratingTask: boolean
   onRegenerateTask: () => void
-  quest: IQuestQuestion
+  quest: IQuest
   task: IRecommendedTask | undefined
 }) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
@@ -227,12 +230,13 @@ function useRecommendedTaskQuery({
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
     retry: false,
     staleTime: Infinity,
   })
 }
 
-function useQuestQuestionQuery({
+function useQuestQuery({
   challenge,
   enabled,
   goal,
@@ -251,7 +255,7 @@ function useQuestQuestionQuery({
 }) {
   return useQuery({
     enabled,
-    queryKey: ['quest-question', name, goal, challenge, storyBlueprint?.title, task?.task, taskGeneratedAt],
+    queryKey: ['quest', name, goal, challenge, storyBlueprint?.title, task?.task, taskGeneratedAt],
     queryFn: async () => {
       if (!storyBlueprint || !task) {
         throw new Error('Story blueprint and task are required')
@@ -260,16 +264,16 @@ function useQuestQuestionQuery({
       const response = await fetch('/api/generate/data', {
         method: 'POST',
         body: JSON.stringify({
-          message: createQuestQuestionPrompt({ challenge, goal, name, storyBlueprint, task }),
-          schemaId: 'questQuestion',
+          message: createQuestPrompt({ challenge, goal, name, storyBlueprint, task }),
+          schemaId: 'quest',
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to generate quest question')
+        throw new Error('Failed to generate quest')
       }
 
-      return QuestQuestion.parse(await response.json())
+      return Quest.parse(await response.json())
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -310,13 +314,16 @@ Story context:
 Rules:
 - Choose exactly one next step the user can take soon.
 - Make it small enough to start without planning a whole project.
+- The task must be complete, concrete, and immediately understandable.
+- The task must include all needed details; never output a sentence fragment.
 - The task must move the user toward the goal and account for the challenge.
 - Do not invent personal history beyond the provided inputs.
 - Reasoning should be concise and practical.
+- Avoid vague branded ritual names unless they make the action clearer.
 `
 }
 
-function createQuestQuestionPrompt({
+function createQuestPrompt({
   challenge,
   goal,
   name,
@@ -332,8 +339,14 @@ function createQuestQuestionPrompt({
   return `
 Turn the recommended real-world task into a user-facing story quest.
 
-The visible quest should feel like it belongs to the same story as the base
-blurb. Do not expose the recommendation reasoning in the visible quest content.
+This is the primary motivational moment in the app. The quest should make the
+user feel identified with the hero and ready to act now.
+
+The quest and content fields must live inside the story world. They should feel
+like a compact World of Warcraft or Guild Wars 2 quest brief: a small story with
+situation, pressure, immediate action, and emotional payoff. Do not expose the
+recommendation reasoning or literal real-world task details in the visible quest
+content.
 
 User:
 - Name: ${name}
@@ -352,12 +365,26 @@ Hidden recommended task:
 - Reasoning: ${task.reasoning}
 
 Rules:
-- quest: short story-world quest title.
-- content: one vivid question or prompt that invites ${name} to act now.
-- task: copy or lightly clarify the plain real-world task without fantasy language.
-- metaphors: list the important real-world concepts and their story-world translations.
+- quest: short in-world quest title. Do not use literal productivity terms.
+- content: 3-5 sentences of immersive in-world quest text.
+- content must establish the immediate story situation, name the pressure or threat, call the hero into action, and show what this small action changes.
+- action: short, direct in-world instruction the hero should take now.
+- action must be actionable while staying fully inside the story metaphor.
+- metaphors: list the important real-world concepts and their story-world translations for the explanation dialog.
+- The first metaphors item must map the complete real-world recommended task to the generated in-world action.
 - Keep the story aligned with the base blurb; do not create a different world.
 - The quest can vary its phrasing and metaphors even when the task stays the same.
+- The metaphor must sharpen the real task, not hide it behind vague fantasy.
+- Keep concrete real-world details out of quest, content, and action unless those exact words already belong to the story world.
+- Banned from quest/content/action when they break immersion: coding, calendar, app, 25 minutes, distractions, task, schedule.
+- Use in-world equivalents: timebox -> one focused watch or short vigil; project work -> shaping the relic, forgework, artifact; distraction -> whispers, fog, lures; procrastination or inertia -> the existing enemy pressing closer.
+- Avoid arbitrary ritual titles, "begin the journey" phrasing, and incomplete task strings.
+- Bad title: "Iron Will's 25-Minute Code Strike"
+- Bad content: "Spend 25 minutes coding on your app, ignoring all distractions."
+- Bad action: "Spend 25 minutes coding on your app, ignoring all distractions."
+- Good title: "The First Strike at Dawn"
+- Good content: "Iron Will, the forge has cooled beneath the Great Sloth's mist, but one coal still glows under the ash. The beast fattens on every unguarded hour, and its whispers grow louder when the hammer stays still. Take up the work for one focused watch and shape the relic one clean strike further. Let the fog learn that even a small flame can push it back."
+- Good action: "Hold the forge for one focused watch, shaping the relic while the Sloth's whispers pass unanswered."
 `
 }
 
@@ -366,7 +393,7 @@ async function refetchFailedQueries({
   storyQuery,
   taskQuery,
 }: {
-  questQuery: ReturnType<typeof useQuestQuestionQuery>
+  questQuery: ReturnType<typeof useQuestQuery>
   storyQuery: ReturnType<typeof useStoryBlueprintQuery>
   taskQuery: ReturnType<typeof useRecommendedTaskQuery>
 }) {
