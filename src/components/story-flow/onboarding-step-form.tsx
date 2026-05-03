@@ -34,13 +34,14 @@ export function OnboardingStepForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-2xl border border-border bg-card/90 p-3.5 shadow-xl backdrop-blur"
+      className="rounded-2xl border border-primary/20 bg-card/90 p-3.5 shadow-2xl shadow-background/50 backdrop-blur"
     >
       <div className="flex items-center gap-3">
         <Input
           aria-label={inputLabel}
           autoFocus
-          className="h-14 rounded-2xl border-primary/30 bg-background/70 px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary"
+          size="hero"
+          variant="hero"
           placeholder={placeholder}
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -48,10 +49,10 @@ export function OnboardingStepForm({
         <motion.div whileTap={{ scale: 0.94 }}>
           <Button
             aria-label="Continue"
-            className="h-14 min-w-14 rounded-2xl"
             disabled={!canContinue}
-            size="icon"
+            size="hero-icon"
             type="submit"
+            variant="hero"
           >
             <Send />
           </Button>

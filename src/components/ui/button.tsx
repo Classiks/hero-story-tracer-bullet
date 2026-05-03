@@ -5,7 +5,14 @@ import { Slot } from "radix-ui"
 import { cn } from "#/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  [
+    "inline-flex shrink-0 items-center justify-center gap-2 rounded-md",
+    "text-sm font-medium whitespace-nowrap transition-all outline-none",
+    "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+    "disabled:pointer-events-none disabled:opacity-50",
+    "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  ],
   {
     variants: {
       variant: {
@@ -18,6 +25,17 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+        hero:
+          [
+            // Warm gradient
+            "bg-linear-to-br from-primary via-primary to-chart-3",
+            "border border-primary/30 text-primary-foreground",
+            // Ember lift
+            "shadow-[0_10px_30px_color-mix(in_srgb,var(--primary)_32%,transparent)]",
+            "hover:from-primary/95 hover:to-chart-3/90 focus-visible:ring-primary/35",
+            "disabled:bg-muted disabled:from-muted disabled:via-muted disabled:to-muted",
+            "disabled:text-muted-foreground disabled:shadow-none",
+          ],
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -29,6 +47,8 @@ const buttonVariants = cva(
         "icon-xs": "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3",
         "icon-sm": "size-8",
         "icon-lg": "size-10",
+        hero: "h-14 rounded-2xl px-5 has-[>svg]:px-4",
+        "hero-icon": "size-14 rounded-2xl",
       },
     },
     defaultVariants: {

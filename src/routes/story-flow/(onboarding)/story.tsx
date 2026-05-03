@@ -1,5 +1,5 @@
 import { Button } from '#/components/ui/button'
-import { StoryCopy, StoryFrame, StoryHeading, StoryKicker } from '#/components/story-flow/story-primitives'
+import { StoryCopy, StoryFrame, StoryHeading, StoryKicker, StorySurface } from '#/components/story-flow/story-primitives'
 import { StoryBlueprint, type IStoryBlueprint } from '#/modules/ai/schemas/metaphors'
 import { useOnboardingStore } from '#/state/onboarding'
 import { useQuery } from '@tanstack/react-query'
@@ -66,8 +66,9 @@ function RouteComponent() {
           </div>
 
           <Button
-            className="h-14 rounded-2xl"
             onClick={() => navigate({ to: NameRoute.to })}
+            size="hero"
+            variant="hero"
           >
             <ArrowLeft />
             Start again
@@ -183,7 +184,7 @@ function StoryPresentation({
         />
       </div>
 
-      <Button className="mt-10 w-full" disabled={!imageData} onClick={() => alert("Mehr gibts noch nicht :)")}>
+      <Button className="mt-10 w-full" disabled={!imageData} onClick={() => alert("Mehr gibts noch nicht :)")} size="hero" variant="hero">
         Continue <ArrowRight />
       </Button>
     </div>
@@ -202,8 +203,8 @@ function StoryImageBanner({
   title: string
 }) {
   return (
-    <motion.div
-      className="-mx-2 overflow-hidden rounded-3xl border border-border bg-background/60 shadow-xl"
+    <StorySurface
+      className="-mx-2 overflow-hidden bg-background/65"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -233,7 +234,7 @@ function StoryImageBanner({
           src={`data:image/png;base64,${imageData}`}
         />
       )}
-    </motion.div>
+    </StorySurface>
   )
 }
 
@@ -247,8 +248,8 @@ function MetaphorCard({
   value: string
 }) {
   return (
-    <motion.div
-      className="flex items-center gap-3 rounded-2xl border border-border bg-card/80 p-4"
+    <StorySurface
+      className="flex items-center gap-3 rounded-2xl p-4"
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -261,7 +262,7 @@ function MetaphorCard({
         </p>
         <p className="mt-1 text-base font-semibold text-foreground">{value}</p>
       </div>
-    </motion.div>
+    </StorySurface>
   )
 }
 

@@ -11,6 +11,10 @@ type MotionHeadingProps = Omit<ComponentProps<typeof motion.h1>, 'children'> & {
   children?: ReactNode
 }
 
+type MotionDivProps = Omit<ComponentProps<typeof motion.div>, 'children'> & {
+  children?: ReactNode
+}
+
 export function StoryFrame({
   children,
   panelClassName,
@@ -19,10 +23,30 @@ export function StoryFrame({
   panelClassName?: string
 }) {
   return (
-    <div className="relative isolate min-h-svh overflow-hidden bg-background/70">
+    <div className="relative isolate min-h-svh overflow-hidden bg-background">
+      <div
+        aria-hidden="true"
+        className={cn(
+          'pointer-events-none absolute inset-0 -z-10',
+          // Warm corner glow
+          'bg-[radial-gradient(circle_at_22%_12%,color-mix(in_srgb,var(--primary)_28%,transparent),transparent_28%),radial-gradient(circle_at_82%_18%,color-mix(in_srgb,var(--accent)_18%,transparent),transparent_30%),linear-gradient(180deg,var(--background)_0%,var(--card)_48%,var(--background)_100%)]',
+        )}
+      />
+      <div
+        aria-hidden="true"
+        className={cn(
+          'pointer-events-none absolute inset-0 -z-10 opacity-80',
+          // Magical light sweep
+          'bg-[conic-gradient(from_215deg_at_50%_42%,transparent_0deg,color-mix(in_srgb,var(--accent)_13%,transparent)_55deg,transparent_118deg,color-mix(in_srgb,var(--primary)_18%,transparent)_186deg,transparent_275deg,transparent_360deg)]',
+        )}
+      />
       <div
         className={cn(
-          'mx-auto min-h-svh w-full max-w-md border-x border-border/60 bg-card/80 shadow-2xl',
+          'mx-auto min-h-svh w-full max-w-md',
+          // Phone frame
+          'border-x border-border/60 bg-card/85',
+          // Glass depth
+          'shadow-2xl shadow-background/70 backdrop-blur',
           panelClassName,
         )}
       >
@@ -39,7 +63,12 @@ export function StoryKicker({
   return (
     <motion.p
       className={cn(
-        'w-fit rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary',
+        'w-fit rounded-full px-3 py-1.5',
+        'text-xs font-bold uppercase tracking-wider text-primary',
+        // Badge tint
+        'border border-primary/35 bg-primary/10',
+        // Soft ember glow
+        'shadow-[0_0_28px_color-mix(in_srgb,var(--primary)_20%,transparent)]',
         className,
       )}
       {...props}
@@ -76,13 +105,25 @@ export function StoryHeading({
     <motion.h1
       className={cn(
         'font-serif text-5xl leading-none tracking-normal text-foreground sm:text-6xl',
+        // Lift off background
+        'drop-shadow-lg',
         compact ? 'mt-10' : 'mt-12',
         className,
       )}
       {...props}
     >
       {children}
-      {accent ? <span className="block text-primary">{accent}</span> : null}
+      {accent ? (
+        <span
+          className={cn(
+            'block text-primary',
+            // Accent glow
+            'drop-shadow-[0_0_24px_color-mix(in_srgb,var(--primary)_45%,transparent)]',
+          )}
+        >
+          {accent}
+        </span>
+      ) : null}
     </motion.h1>
   )
 }
@@ -99,6 +140,25 @@ export function StoryCopy({
       className={cn(
         'mt-5 text-base leading-relaxed text-muted-foreground',
         wide ? 'max-w-sm' : 'max-w-xs',
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+export function StorySurface({
+  className,
+  ...props
+}: MotionDivProps) {
+  return (
+    <motion.div
+      className={cn(
+        'rounded-3xl',
+        // Warm surface
+        'border border-primary/15 bg-card/85',
+        // Floating card
+        'shadow-2xl shadow-background/60 backdrop-blur',
         className,
       )}
       {...props}
