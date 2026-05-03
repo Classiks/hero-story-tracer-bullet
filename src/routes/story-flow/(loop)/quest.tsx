@@ -48,6 +48,9 @@ function RouteComponent() {
           <DialogDescription>
             <p>Recommended Step: {task.task}</p>
             <p>Why: {task.reasoning}</p>
+            <p>What is being translated: {quest.metaphors.map((metaphor) => <p>
+              {metaphor.real}: {metaphor.metaphor}
+            </p>)}</p>
           </DialogDescription>
         </DialogHeader>
       </DialogContent>
@@ -68,6 +71,12 @@ function useGetQuest() {
   return {
     quest: "Quest Name",
     content: "Quest",
-    task: "Task"
+    task: "Task",
+    metaphors: [
+      {
+        real: "thing",
+        metaphor: "metaphor"
+      }
+    ]
   }
 }
