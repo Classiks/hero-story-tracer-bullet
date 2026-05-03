@@ -1,5 +1,12 @@
 import { Button } from '#/components/ui/button'
 import {
+  StoryCopy,
+  StoryFrame,
+  StoryHeading,
+  StoryKicker,
+  StorySurface,
+} from '#/components/story-flow/story-primitives'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -8,12 +15,27 @@ import {
   DialogTrigger,
 } from '#/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
-import { Quest, RecommendedTask, type IQuest, type IRecommendedTask, type IStoryBlueprint } from '#/modules/ai/schemas/metaphors'
+import {
+  Quest,
+  RecommendedTask,
+  type IQuest,
+  type IRecommendedTask,
+  type IStoryBlueprint,
+} from '#/modules/ai/schemas/metaphors'
 import { useStoryBlueprintQuery } from '#/modules/story-flow/story-generation'
 import { useOnboardingStore } from '#/state/onboarding'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { CircleQuestionMark, Loader2, RefreshCw } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  CircleQuestionMark,
+  Loader2,
+  RefreshCw,
+  ScrollText,
+  Sparkles,
+} from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
 
@@ -52,15 +74,27 @@ function RouteComponent() {
 
   if (!hasInputs) {
     return (
-      <main className="min-h-svh p-6">
-        <h1 className="text-2xl font-semibold">No quest yet</h1>
-        <p className="mt-3 text-muted-foreground">
-          Create your hero, goal, and challenge before asking for a quest.
-        </p>
-        <Button className="mt-6" onClick={() => navigate({ to: StartRoute.to })}>
-          Start onboarding
-        </Button>
-      </main>
+      <StoryFrame>
+        <div className="flex min-h-svh flex-col justify-between px-5 py-6">
+          <div>
+            <StoryKicker>Chronicle paused</StoryKicker>
+            <StoryHeading accent="quest.">Missing</StoryHeading>
+            <StoryCopy>
+              The story needs a hero, a quest, and a challenge before it can
+              shape the next step.
+            </StoryCopy>
+          </div>
+
+          <Button
+            onClick={() => navigate({ to: StartRoute.to })}
+            size="hero"
+            variant="hero"
+          >
+            <ArrowLeft />
+            Start onboarding
+          </Button>
+        </div>
+      </StoryFrame>
     )
   }
 
@@ -71,58 +105,168 @@ function RouteComponent() {
   const quest = questQuery.data
 
   return (
-    <main className="min-h-svh p-6">
-      {isLoading && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-          Preparing your next quest...
-        </div>
-      )}
+    <StoryFrame>
+      <main className="min-h-svh px-5 py-6">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.36 }}
+        >
+          <StoryKicker>Active quest</StoryKicker>
 
-      {hasError && (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
-          <p className="font-medium">The quest could not be generated.</p>
-          <Button className="mt-4" onClick={() => void refetchFailedQueries({ questQuery, storyQuery, taskQuery })}>
-            Try again
-          </Button>
-        </div>
-      )}
+          {isLoading && <QuestLoading name={name} />}
 
-      {quest && (
-        <>
-          <h1 className="text-2xl font-semibold">Your Quest: {quest.quest}</h1>
-          <p className="mt-4 text-muted-foreground">{quest.content}</p>
-          <p className="mt-4 font-medium">{quest.action}</p>
+          {hasError && (
+            <QuestErrorState
+              onRetry={() => void refetchFailedQueries({ questQuery, storyQuery, taskQuery })}
+            />
+          )}
 
-          <div className="mt-6 flex flex-row items-center gap-3">
-            <Button>Accept</Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  aria-label="Generate a new quest"
-                  disabled={isRegeneratingQuest}
-                  onClick={() => void questQuery.refetch()}
-                  size="icon"
-                  variant="outline"
-                >
-                  <RefreshCw className={isRegeneratingQuest ? 'animate-spin' : undefined} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Generate a new quest</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <QuestReasonDialog
+          {quest && (
+            <QuestPresentation
+              isRegeneratingQuest={isRegeneratingQuest}
               isRegeneratingTask={isRegeneratingTask}
+              onRegenerateQuest={() => void questQuery.refetch()}
               onRegenerateTask={() => void taskQuery.refetch()}
               quest={quest}
               task={taskQuery.data}
             />
-          </div>
-        </>
-      )}
-    </main>
+          )}
+        </motion.div>
+      </main>
+    </StoryFrame>
+  )
+}
+
+function QuestLoading({ name }: { name: string }) {
+  return (
+    <div className="mt-12">
+      <motion.div
+        aria-hidden="true"
+        className="mx-auto grid size-28 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent"
+        animate={{ rotate: 360, scale: [1, 1.04, 1] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+      >
+        <ScrollText className="size-9" />
+      </motion.div>
+      <StoryHeading accent="quest." compact>
+        Preparing
+      </StoryHeading>
+      <StoryCopy wide>
+        The narrator is reading the path ahead for {name} and shaping one step
+        into a quest worth answering.
+      </StoryCopy>
+    </div>
+  )
+}
+
+function QuestErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <StorySurface className="mt-12 p-5">
+      <div className="flex items-start gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-destructive/10 text-destructive">
+          <Sparkles className="size-5" />
+        </div>
+        <div>
+          <h2 className="font-semibold text-foreground">The quest failed to form.</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Step back into the story and ask the narrator to try again.
+          </p>
+        </div>
+      </div>
+
+      <Button className="mt-5 w-full" onClick={onRetry} size="hero" variant="hero">
+        Try again
+      </Button>
+    </StorySurface>
+  )
+}
+
+function QuestPresentation({
+  isRegeneratingQuest,
+  isRegeneratingTask,
+  onRegenerateQuest,
+  onRegenerateTask,
+  quest,
+  task,
+}: {
+  isRegeneratingQuest: boolean
+  isRegeneratingTask: boolean
+  onRegenerateQuest: () => void
+  onRegenerateTask: () => void
+  quest: IQuest
+  task: IRecommendedTask | undefined
+}) {
+  function handleAcceptQuest() {
+    void new Audio('/assets/sounds/quest-accepted.mp3').play().catch(() => undefined)
+    alert('not yet implemented :)')
+  }
+
+  return (
+    <div className="mt-10 pb-5">
+      <StoryHeading
+        className="mt-7"
+        compact
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        {quest.quest}
+      </StoryHeading>
+
+      <StorySurface
+        className="mt-6 p-5"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.06 }}
+      >
+        <p className="text-base leading-relaxed text-foreground/85">{quest.content}</p>
+      </StorySurface>
+
+      <StorySurface
+        className="mt-4 border-accent/25 bg-accent/10 p-5"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+          Action
+        </p>
+        <p className="mt-3 text-lg font-semibold leading-snug text-foreground">
+          {quest.action}
+        </p>
+      </StorySurface>
+
+      <div className="mt-6 flex items-center gap-3">
+        <Button className="flex-1" onClick={handleAcceptQuest} size="hero" variant="hero">
+          <Check />
+          Accept
+        </Button>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label="Generate a new quest"
+              disabled={isRegeneratingQuest}
+              onClick={onRegenerateQuest}
+              size="hero-icon"
+              variant="outline"
+            >
+              <RefreshCw className={isRegeneratingQuest ? 'animate-spin' : undefined} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Generate a new quest</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <QuestReasonDialog
+          isRegeneratingTask={isRegeneratingTask}
+          onRegenerateTask={onRegenerateTask}
+          quest={quest}
+          task={task}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -144,7 +288,7 @@ function QuestReasonDialog({
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button aria-label="Why this quest" size="icon" variant="outline">
+            <Button aria-label="Why this quest" size="hero-icon" variant="outline">
               <CircleQuestionMark />
             </Button>
           </DialogTrigger>
@@ -153,7 +297,7 @@ function QuestReasonDialog({
           <p>Why this quest</p>
         </TooltipContent>
       </Tooltip>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Why this quest</DialogTitle>
           <DialogDescription>
@@ -161,29 +305,36 @@ function QuestReasonDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 text-sm">
-          <section>
-            <h3 className="font-semibold text-foreground">Recommended Step</h3>
-            <p className="mt-1 text-muted-foreground">{task?.task}</p>
+        <div className="space-y-3 text-sm">
+          <section className="rounded-2xl border border-border bg-card/60 p-4">
+            <h3 className="font-semibold text-foreground">Recommended step</h3>
+            <p className="mt-2 leading-relaxed text-muted-foreground">{task?.task}</p>
           </section>
 
-          <section>
+          <section className="rounded-2xl border border-border bg-card/60 p-4">
             <h3 className="font-semibold text-foreground">Why</h3>
-            <p className="mt-1 text-muted-foreground">{task?.reasoning}</p>
+            <p className="mt-2 leading-relaxed text-muted-foreground">{task?.reasoning}</p>
           </section>
 
-          <section>
+          <section className="rounded-2xl border border-border bg-card/60 p-4">
             <h3 className="font-semibold text-foreground">What is being translated</h3>
-            <div className="mt-2 space-y-2">
+            <div className="mt-3 space-y-3">
               {quest.metaphors.map((metaphor) => (
-                <p key={`${metaphor.real}:${metaphor.metaphor}`} className="text-muted-foreground">
-                  <span className="font-medium text-foreground">{metaphor.real}</span>: {metaphor.metaphor}
-                </p>
+                <div key={`${metaphor.real}:${metaphor.metaphor}`} className="space-y-1">
+                  <p className="font-medium leading-snug text-foreground">{metaphor.real}</p>
+                  <p className="leading-relaxed text-muted-foreground">{metaphor.metaphor}</p>
+                </div>
               ))}
             </div>
           </section>
 
-          <Button disabled={isRegeneratingTask} onClick={onRegenerateTask} variant="outline">
+          <Button
+            className="w-full"
+            disabled={isRegeneratingTask}
+            onClick={onRegenerateTask}
+            size="hero"
+            variant="outline"
+          >
             {isRegeneratingTask && <Loader2 className="animate-spin" />}
             Generate a new task
           </Button>
