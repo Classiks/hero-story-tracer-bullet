@@ -1,5 +1,5 @@
 import { generateImage } from '#/modules/ai/generate-image';
-import { isMockMode, readMockImage } from '#/modules/ai/mock-mode';
+import { readMockImage, shouldMock } from '#/modules/ai/mock-mode';
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/api/generate/image')({
@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/generate/image')({
       POST: async ({ request }) => {
         const { message } = await request.json();
 
-        if (isMockMode()) {
+        if (shouldMock('image')) {
           return Response.json({ image: await readMockImage() })
         }
 

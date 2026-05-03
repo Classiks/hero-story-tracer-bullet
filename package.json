@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
-    "mock": "IS_MOCK_MODE=true vite dev --port 3000",
+    "mock": "MOCK=all vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run"

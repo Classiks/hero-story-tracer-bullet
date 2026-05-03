@@ -1,5 +1,5 @@
 import { generateData } from '#/modules/ai/generate-data';
-import { isMockMode, readMockData } from '#/modules/ai/mock-mode';
+import { readMockData, shouldMock } from '#/modules/ai/mock-mode';
 import { getSchema } from '#/modules/ai/schemas/get-schema';
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -10,8 +10,8 @@ export const Route = createFileRoute('/api/generate/data')({
         const { message, schemaId } = await request.json();
 
         const schema = getSchema(schemaId);
-        if (isMockMode()) {
-          return Response.json(await readMockData(schema))
+        if (shouldMock(schemaId)) {
+          return Response.json(await readMockData(schema, schemaId))
         }
 
         const data = await generateData(message, schema)
