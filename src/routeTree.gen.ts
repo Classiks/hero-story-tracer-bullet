@@ -9,10 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestRouteRouteImport } from './routes/test/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoryFlowIndexRouteImport } from './routes/story-flow/index'
-import { Route as ApiTestRouteRouteImport } from './routes/api/test/route'
 import { Route as StoryFlowonboardingStoryRouteImport } from './routes/story-flow/(onboarding)/story'
 import { Route as StoryFlowonboardingProblemRouteImport } from './routes/story-flow/(onboarding)/problem'
 import { Route as StoryFlowonboardingNameRouteImport } from './routes/story-flow/(onboarding)/name'
@@ -20,11 +18,6 @@ import { Route as StoryFlowonboardingGoalRouteImport } from './routes/story-flow
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate/image'
 import { Route as ApiGenerateDataRouteImport } from './routes/api/generate/data'
 
-const TestRouteRoute = TestRouteRouteImport.update({
-  id: '/test',
-  path: '/test',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -33,11 +26,6 @@ const IndexRoute = IndexRouteImport.update({
 const StoryFlowIndexRoute = StoryFlowIndexRouteImport.update({
   id: '/story-flow/',
   path: '/story-flow/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTestRouteRoute = ApiTestRouteRouteImport.update({
-  id: '/api/test',
-  path: '/api/test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StoryFlowonboardingStoryRoute =
@@ -75,8 +63,6 @@ const ApiGenerateDataRoute = ApiGenerateDataRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/test': typeof TestRouteRoute
-  '/api/test': typeof ApiTestRouteRoute
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
@@ -87,8 +73,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/test': typeof TestRouteRoute
-  '/api/test': typeof ApiTestRouteRoute
   '/story-flow': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
@@ -100,8 +84,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/test': typeof TestRouteRoute
-  '/api/test': typeof ApiTestRouteRoute
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
@@ -114,8 +96,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/test'
-    | '/api/test'
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
@@ -126,8 +106,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/test'
-    | '/api/test'
     | '/story-flow'
     | '/api/generate/data'
     | '/api/generate/image'
@@ -138,8 +116,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/test'
-    | '/api/test'
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
@@ -151,8 +127,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  TestRouteRoute: typeof TestRouteRoute
-  ApiTestRouteRoute: typeof ApiTestRouteRoute
   StoryFlowIndexRoute: typeof StoryFlowIndexRoute
   ApiGenerateDataRoute: typeof ApiGenerateDataRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
@@ -164,13 +138,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/test': {
-      id: '/test'
-      path: '/test'
-      fullPath: '/test'
-      preLoaderRoute: typeof TestRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -183,13 +150,6 @@ declare module '@tanstack/react-router' {
       path: '/story-flow'
       fullPath: '/story-flow/'
       preLoaderRoute: typeof StoryFlowIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/test': {
-      id: '/api/test'
-      path: '/api/test'
-      fullPath: '/api/test'
-      preLoaderRoute: typeof ApiTestRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/story-flow/(onboarding)/story': {
@@ -239,8 +199,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  TestRouteRoute: TestRouteRoute,
-  ApiTestRouteRoute: ApiTestRouteRoute,
   StoryFlowIndexRoute: StoryFlowIndexRoute,
   ApiGenerateDataRoute: ApiGenerateDataRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,

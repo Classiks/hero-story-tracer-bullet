@@ -1,4 +1,5 @@
 import { Button } from '#/components/ui/button'
+import { StoryCopy, StoryFrame, StoryHeading, StoryKicker } from '#/components/story-flow/story-primitives'
 import { StoryBlueprint, type IStoryBlueprint } from '#/modules/ai/schemas/metaphors'
 import { useOnboardingStore } from '#/state/onboarding'
 import { useQuery } from '@tanstack/react-query'
@@ -54,21 +55,18 @@ function RouteComponent() {
       <StoryFrame>
         <div className="flex min-h-svh flex-col justify-between px-5 py-6">
           <div>
-            <p className="w-fit rounded-full border border-[#ffb74a]/30 bg-[#ffb74a]/10 px-3 py-1.5 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#ffb74a]">
-              Chronicle paused
-            </p>
-            <h1 className="mt-12 font-serif text-[clamp(2.45rem,15vw,4.2rem)] leading-[0.92] tracking-normal text-[#f7f0df]">
+            <StoryKicker>Chronicle paused</StoryKicker>
+            <StoryHeading accent="pieces.">
               Missing
-              <span className="block text-[#ffb74a] [text-shadow:0_0_26px_rgba(255,122,61,0.38)]">pieces.</span>
-            </h1>
-            <p className="mt-5 max-w-[29ch] text-base leading-relaxed text-[#b5ae9d]">
+            </StoryHeading>
+            <StoryCopy>
               The story needs a hero, a quest, and a challenge before it can
               shape the journey.
-            </p>
+            </StoryCopy>
           </div>
 
           <Button
-            className="h-14 rounded-2xl bg-[linear-gradient(135deg,#ffb74a,#ff7a3d)] text-[#160f08] shadow-[0_10px_26px_rgba(255,122,61,0.26)]"
+            className="h-14 rounded-2xl"
             onClick={() => navigate({ to: NameRoute.to })}
           >
             <ArrowLeft />
@@ -87,9 +85,7 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <p className="w-fit rounded-full border border-[#ffb74a]/30 bg-[#ffb74a]/10 px-3 py-1.5 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-[#ffb74a]">
-            Story blueprint
-          </p>
+          <StoryKicker>Story blueprint</StoryKicker>
 
           {storyQuery.isPending && <StoryLoading name={name} />}
 
@@ -111,37 +107,22 @@ function RouteComponent() {
   )
 }
 
-function StoryFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative isolate min-h-svh overflow-hidden bg-[radial-gradient(circle_at_22%_12%,rgba(255,122,61,0.28),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(84,227,208,0.16),transparent_30%),linear-gradient(180deg,#070910_0%,#0d1422_46%,#05070c_100%)]">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[conic-gradient(from_215deg_at_50%_42%,transparent_0deg,rgba(84,227,208,0.12)_55deg,transparent_118deg,rgba(255,122,61,0.16)_186deg,transparent_275deg,transparent_360deg),radial-gradient(circle_at_50%_42%,rgba(255,183,74,0.12),transparent_44%)] opacity-70"
-      />
-      <div className="mx-auto min-h-svh w-full max-w-[430px] border-x border-white/10 bg-[linear-gradient(180deg,rgba(16,24,39,0.78),rgba(5,7,12,0.92)),linear-gradient(135deg,rgba(255,183,74,0.1),transparent_42%)] shadow-[0_18px_60px_rgba(0,0,0,0.44)]">
-        {children}
-      </div>
-    </div>
-  )
-}
-
 function StoryLoading({ name }: { name: string }) {
   return (
     <div className="mt-12">
       <motion.div
         aria-hidden="true"
-        className="mx-auto size-28 rounded-full border border-cyan-200/15 bg-cyan-200/5"
+        className="mx-auto size-28 rounded-full border border-accent/20 bg-accent/10"
         animate={{ rotate: 360, scale: [1, 1.04, 1] }}
         transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
       />
-      <h1 className="mt-10 font-serif text-[clamp(2.25rem,13vw,3.8rem)] leading-[0.94] tracking-normal text-[#f7f0df]">
+      <StoryHeading accent="the chronicle." compact>
         Forging
-        <span className="block text-[#ffb74a] [text-shadow:0_0_26px_rgba(255,122,61,0.38)]">the chronicle.</span>
-      </h1>
-      <p className="mt-5 max-w-[30ch] text-base leading-relaxed text-[#b5ae9d]">
+      </StoryHeading>
+      <StoryCopy wide>
         The narrator is turning {name} into a hero, the goal into a quest, and
         the challenge into something that can be faced.
-      </p>
+      </StoryCopy>
     </div>
   )
 }
@@ -166,22 +147,23 @@ function StoryPresentation({
         title={blueprint.title}
       />
 
-      <motion.h1
-        className="mt-7 font-serif text-[clamp(2.25rem,13vw,3.85rem)] leading-[0.94] tracking-normal text-[#f7f0df]"
+      <StoryHeading
+        className="mt-7"
+        compact
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         {blueprint.title}
-      </motion.h1>
+      </StoryHeading>
 
-      <motion.p
-        className="mt-5 text-base leading-relaxed text-[#d8d0bd]"
+      <StoryCopy
+        className="max-w-none text-foreground/80"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08 }}
       >
         {blueprint.storyBlurb}
-      </motion.p>
+      </StoryCopy>
 
       <div className="mt-5 grid gap-3">
         <MetaphorCard
@@ -201,7 +183,7 @@ function StoryPresentation({
         />
       </div>
 
-      <Button className="w-full mt-10" disabled={!imageData} onClick={() => alert("Mehr gibts noch nicht :)")}>
+      <Button className="mt-10 w-full" disabled={!imageData} onClick={() => alert("Mehr gibts noch nicht :)")}>
         Continue <ArrowRight />
       </Button>
     </div>
@@ -221,25 +203,25 @@ function StoryImageBanner({
 }) {
   return (
     <motion.div
-      className="-mx-2 overflow-hidden rounded-[24px] border border-white/12 bg-[#05070c]/55 shadow-[0_18px_38px_rgba(0,0,0,0.3)]"
+      className="-mx-2 overflow-hidden rounded-3xl border border-border bg-background/60 shadow-xl"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
     >
       {imagePending && (
-        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-[#b5ae9d]">
+        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-muted-foreground">
           <motion.div
             animate={{ opacity: [0.45, 1, 0.45] }}
             transition={{ duration: 1.4, repeat: Infinity }}
           >
-            <ImageIcon className="size-9 text-cyan-100/70" />
+            <ImageIcon className="size-9 text-accent" />
           </motion.div>
           <p>The banner is taking shape.</p>
         </div>
       )}
 
       {imageError && (
-        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-[#b5ae9d]">
-          <Flame className="size-9 text-[#ffb74a]" />
+        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-muted-foreground">
+          <Flame className="size-9 text-primary" />
           <p>The story is ready, but the banner could not be forged.</p>
         </div>
       )}
@@ -247,7 +229,7 @@ function StoryImageBanner({
       {imageData && (
         <img
           alt={title}
-          className="aspect-video w-full bg-[#05070c] object-contain"
+          className="aspect-video w-full bg-background object-contain"
           src={`data:image/png;base64,${imageData}`}
         />
       )}
@@ -266,18 +248,18 @@ function MetaphorCard({
 }) {
   return (
     <motion.div
-      className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.055] p-4"
+      className="flex items-center gap-3 rounded-2xl border border-border bg-card/80 p-4"
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="grid size-10 place-items-center rounded-xl bg-cyan-200/10 text-cyan-100">
+      <div className="grid size-10 place-items-center rounded-xl bg-accent/10 text-accent">
         {icon}
       </div>
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b5ae9d]">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {label}
         </p>
-        <p className="mt-1 text-base font-semibold text-[#f7f0df]">{value}</p>
+        <p className="mt-1 text-base font-semibold text-foreground">{value}</p>
       </div>
     </motion.div>
   )
@@ -285,7 +267,7 @@ function MetaphorCard({
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div className="mt-12 rounded-[22px] border border-[#ff7a3d]/30 bg-[#ff7a3d]/10 p-4 text-[#f7f0df]">
+    <div className="mt-12 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-foreground">
       {message}
     </div>
   )
