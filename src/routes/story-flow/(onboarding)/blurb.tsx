@@ -7,7 +7,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ImageIcon, ShieldAlert } from 'lucide-react'
 import { useEffect } from 'react'
-import { Route as NameRoute } from "#/routes/story-flow/(onboarding)/name";
+import { Route as StartRoute } from "#/routes/story-flow/(onboarding)/name";
+import { Route as NextRoute } from "#/routes/story-flow/(loop)/quest";
 
 export const Route = createFileRoute('/story-flow/(onboarding)/blurb')({
   component: RouteComponent,
@@ -66,7 +67,7 @@ function RouteComponent() {
           </div>
 
           <Button
-            onClick={() => navigate({ to: NameRoute.to })}
+            onClick={() => navigate({ to: StartRoute.to })}
             size="hero"
             variant="hero"
           >
@@ -139,6 +140,8 @@ function StoryPresentation({
   imageError: boolean
   imagePending: boolean
 }) {
+  const navigate = useNavigate()
+
   return (
     <div className="mt-10 pb-5">
       <StoryImageBanner
@@ -184,7 +187,7 @@ function StoryPresentation({
         />
       </div>
 
-      <Button className="mt-10 w-full" disabled={!imageData} onClick={() => alert("Mehr gibts noch nicht :)")} size="hero" variant="hero">
+      <Button className="mt-10 w-full" disabled={!imageData} onClick={() => navigate({ to: NextRoute.to })} size="hero" variant="hero">
         Continue <ArrowRight />
       </Button>
     </div>

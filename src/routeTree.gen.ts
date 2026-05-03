@@ -15,6 +15,7 @@ import { Route as StoryFlowonboardingProblemRouteImport } from './routes/story-f
 import { Route as StoryFlowonboardingNameRouteImport } from './routes/story-flow/(onboarding)/name'
 import { Route as StoryFlowonboardingGoalRouteImport } from './routes/story-flow/(onboarding)/goal'
 import { Route as StoryFlowonboardingBlurbRouteImport } from './routes/story-flow/(onboarding)/blurb'
+import { Route as StoryFlowloopQuestRouteImport } from './routes/story-flow/(loop)/quest'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate/image'
 import { Route as ApiGenerateDataRouteImport } from './routes/api/generate/data'
 
@@ -50,6 +51,11 @@ const StoryFlowonboardingBlurbRoute =
     path: '/story-flow/blurb',
     getParentRoute: () => rootRouteImport,
   } as any)
+const StoryFlowloopQuestRoute = StoryFlowloopQuestRouteImport.update({
+  id: '/story-flow/(loop)/quest',
+  path: '/story-flow/quest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
   id: '/api/generate/image',
   path: '/api/generate/image',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/quest': typeof StoryFlowloopQuestRoute
   '/story-flow/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/story-flow': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/quest': typeof StoryFlowloopQuestRoute
   '/story-flow/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/(loop)/quest': typeof StoryFlowloopQuestRoute
   '/story-flow/(onboarding)/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/(onboarding)/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/(onboarding)/name': typeof StoryFlowonboardingNameRoute
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
+    | '/story-flow/quest'
     | '/story-flow/blurb'
     | '/story-flow/goal'
     | '/story-flow/name'
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/story-flow'
     | '/api/generate/data'
     | '/api/generate/image'
+    | '/story-flow/quest'
     | '/story-flow/blurb'
     | '/story-flow/goal'
     | '/story-flow/name'
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
+    | '/story-flow/(loop)/quest'
     | '/story-flow/(onboarding)/blurb'
     | '/story-flow/(onboarding)/goal'
     | '/story-flow/(onboarding)/name'
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   StoryFlowIndexRoute: typeof StoryFlowIndexRoute
   ApiGenerateDataRoute: typeof ApiGenerateDataRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
+  StoryFlowloopQuestRoute: typeof StoryFlowloopQuestRoute
   StoryFlowonboardingBlurbRoute: typeof StoryFlowonboardingBlurbRoute
   StoryFlowonboardingGoalRoute: typeof StoryFlowonboardingGoalRoute
   StoryFlowonboardingNameRoute: typeof StoryFlowonboardingNameRoute
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoryFlowonboardingBlurbRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/story-flow/(loop)/quest': {
+      id: '/story-flow/(loop)/quest'
+      path: '/story-flow/quest'
+      fullPath: '/story-flow/quest'
+      preLoaderRoute: typeof StoryFlowloopQuestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/generate/image': {
       id: '/api/generate/image'
       path: '/api/generate/image'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   StoryFlowIndexRoute: StoryFlowIndexRoute,
   ApiGenerateDataRoute: ApiGenerateDataRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
+  StoryFlowloopQuestRoute: StoryFlowloopQuestRoute,
   StoryFlowonboardingBlurbRoute: StoryFlowonboardingBlurbRoute,
   StoryFlowonboardingGoalRoute: StoryFlowonboardingGoalRoute,
   StoryFlowonboardingNameRoute: StoryFlowonboardingNameRoute,
