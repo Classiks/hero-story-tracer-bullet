@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { OnboardingShell } from '#/components/story-flow/onboarding-shell';
 import { OnboardingStepForm } from '#/components/story-flow/onboarding-step-form';
 import { StoryCopy, StoryHeading } from '#/components/story-flow/story-primitives';
-import { Route as NextStepRoute } from "#/routes/story-flow/(onboarding)/story";
+import { Route as NextStepRoute } from "#/routes/story-flow/(onboarding)/blurb";
 
 export const Route = createFileRoute('/story-flow/(onboarding)/problem')({
   component: RouteComponent,

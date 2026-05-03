@@ -11,10 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoryFlowIndexRouteImport } from './routes/story-flow/index'
-import { Route as StoryFlowonboardingStoryRouteImport } from './routes/story-flow/(onboarding)/story'
 import { Route as StoryFlowonboardingProblemRouteImport } from './routes/story-flow/(onboarding)/problem'
 import { Route as StoryFlowonboardingNameRouteImport } from './routes/story-flow/(onboarding)/name'
 import { Route as StoryFlowonboardingGoalRouteImport } from './routes/story-flow/(onboarding)/goal'
+import { Route as StoryFlowonboardingBlurbRouteImport } from './routes/story-flow/(onboarding)/blurb'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate/image'
 import { Route as ApiGenerateDataRouteImport } from './routes/api/generate/data'
 
@@ -28,12 +28,6 @@ const StoryFlowIndexRoute = StoryFlowIndexRouteImport.update({
   path: '/story-flow/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StoryFlowonboardingStoryRoute =
-  StoryFlowonboardingStoryRouteImport.update({
-    id: '/story-flow/(onboarding)/story',
-    path: '/story-flow/story',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const StoryFlowonboardingProblemRoute =
   StoryFlowonboardingProblemRouteImport.update({
     id: '/story-flow/(onboarding)/problem',
@@ -50,6 +44,12 @@ const StoryFlowonboardingGoalRoute = StoryFlowonboardingGoalRouteImport.update({
   path: '/story-flow/goal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoryFlowonboardingBlurbRoute =
+  StoryFlowonboardingBlurbRouteImport.update({
+    id: '/story-flow/(onboarding)/blurb',
+    path: '/story-flow/blurb',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
   id: '/api/generate/image',
   path: '/api/generate/image',
@@ -66,20 +66,20 @@ export interface FileRoutesByFullPath {
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
-  '/story-flow/story': typeof StoryFlowonboardingStoryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/story-flow': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
-  '/story-flow/story': typeof StoryFlowonboardingStoryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,10 +87,10 @@ export interface FileRoutesById {
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
+  '/story-flow/(onboarding)/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/(onboarding)/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/(onboarding)/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/(onboarding)/problem': typeof StoryFlowonboardingProblemRoute
-  '/story-flow/(onboarding)/story': typeof StoryFlowonboardingStoryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,30 +99,30 @@ export interface FileRouteTypes {
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
+    | '/story-flow/blurb'
     | '/story-flow/goal'
     | '/story-flow/name'
     | '/story-flow/problem'
-    | '/story-flow/story'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/story-flow'
     | '/api/generate/data'
     | '/api/generate/image'
+    | '/story-flow/blurb'
     | '/story-flow/goal'
     | '/story-flow/name'
     | '/story-flow/problem'
-    | '/story-flow/story'
   id:
     | '__root__'
     | '/'
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
+    | '/story-flow/(onboarding)/blurb'
     | '/story-flow/(onboarding)/goal'
     | '/story-flow/(onboarding)/name'
     | '/story-flow/(onboarding)/problem'
-    | '/story-flow/(onboarding)/story'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -130,10 +130,10 @@ export interface RootRouteChildren {
   StoryFlowIndexRoute: typeof StoryFlowIndexRoute
   ApiGenerateDataRoute: typeof ApiGenerateDataRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
+  StoryFlowonboardingBlurbRoute: typeof StoryFlowonboardingBlurbRoute
   StoryFlowonboardingGoalRoute: typeof StoryFlowonboardingGoalRoute
   StoryFlowonboardingNameRoute: typeof StoryFlowonboardingNameRoute
   StoryFlowonboardingProblemRoute: typeof StoryFlowonboardingProblemRoute
-  StoryFlowonboardingStoryRoute: typeof StoryFlowonboardingStoryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -150,13 +150,6 @@ declare module '@tanstack/react-router' {
       path: '/story-flow'
       fullPath: '/story-flow/'
       preLoaderRoute: typeof StoryFlowIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/story-flow/(onboarding)/story': {
-      id: '/story-flow/(onboarding)/story'
-      path: '/story-flow/story'
-      fullPath: '/story-flow/story'
-      preLoaderRoute: typeof StoryFlowonboardingStoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/story-flow/(onboarding)/problem': {
@@ -178,6 +171,13 @@ declare module '@tanstack/react-router' {
       path: '/story-flow/goal'
       fullPath: '/story-flow/goal'
       preLoaderRoute: typeof StoryFlowonboardingGoalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story-flow/(onboarding)/blurb': {
+      id: '/story-flow/(onboarding)/blurb'
+      path: '/story-flow/blurb'
+      fullPath: '/story-flow/blurb'
+      preLoaderRoute: typeof StoryFlowonboardingBlurbRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/generate/image': {
@@ -202,10 +202,10 @@ const rootRouteChildren: RootRouteChildren = {
   StoryFlowIndexRoute: StoryFlowIndexRoute,
   ApiGenerateDataRoute: ApiGenerateDataRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
+  StoryFlowonboardingBlurbRoute: StoryFlowonboardingBlurbRoute,
   StoryFlowonboardingGoalRoute: StoryFlowonboardingGoalRoute,
   StoryFlowonboardingNameRoute: StoryFlowonboardingNameRoute,
   StoryFlowonboardingProblemRoute: StoryFlowonboardingProblemRoute,
-  StoryFlowonboardingStoryRoute: StoryFlowonboardingStoryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

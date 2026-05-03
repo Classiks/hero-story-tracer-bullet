@@ -9,7 +9,7 @@ import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ImageIcon, ShieldAlert } from
 import { useEffect } from 'react'
 import { Route as NameRoute } from "#/routes/story-flow/(onboarding)/name";
 
-export const Route = createFileRoute('/story-flow/(onboarding)/story')({
+export const Route = createFileRoute('/story-flow/(onboarding)/blurb')({
   component: RouteComponent,
 })
 
