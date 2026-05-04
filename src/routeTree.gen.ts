@@ -15,9 +15,11 @@ import { Route as StoryFlowonboardingProblemRouteImport } from './routes/story-f
 import { Route as StoryFlowonboardingNameRouteImport } from './routes/story-flow/(onboarding)/name'
 import { Route as StoryFlowonboardingGoalRouteImport } from './routes/story-flow/(onboarding)/goal'
 import { Route as StoryFlowonboardingBlurbRouteImport } from './routes/story-flow/(onboarding)/blurb'
-import { Route as StoryFlowloopQuestRouteImport } from './routes/story-flow/(loop)/quest'
 import { Route as ApiGenerateImageRouteImport } from './routes/api/generate/image'
 import { Route as ApiGenerateDataRouteImport } from './routes/api/generate/data'
+import { Route as StoryFlowloopQuestResultRouteImport } from './routes/story-flow/(loop)/quest/result'
+import { Route as StoryFlowloopQuestProposalRouteImport } from './routes/story-flow/(loop)/quest/proposal'
+import { Route as StoryFlowloopQuestFeedbackRouteImport } from './routes/story-flow/(loop)/quest/feedback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,11 +53,6 @@ const StoryFlowonboardingBlurbRoute =
     path: '/story-flow/blurb',
     getParentRoute: () => rootRouteImport,
   } as any)
-const StoryFlowloopQuestRoute = StoryFlowloopQuestRouteImport.update({
-  id: '/story-flow/(loop)/quest',
-  path: '/story-flow/quest',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiGenerateImageRoute = ApiGenerateImageRouteImport.update({
   id: '/api/generate/image',
   path: '/api/generate/image',
@@ -66,28 +63,50 @@ const ApiGenerateDataRoute = ApiGenerateDataRouteImport.update({
   path: '/api/generate/data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoryFlowloopQuestResultRoute =
+  StoryFlowloopQuestResultRouteImport.update({
+    id: '/story-flow/(loop)/quest/result',
+    path: '/story-flow/quest/result',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StoryFlowloopQuestProposalRoute =
+  StoryFlowloopQuestProposalRouteImport.update({
+    id: '/story-flow/(loop)/quest/proposal',
+    path: '/story-flow/quest/proposal',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const StoryFlowloopQuestFeedbackRoute =
+  StoryFlowloopQuestFeedbackRouteImport.update({
+    id: '/story-flow/(loop)/quest/feedback',
+    path: '/story-flow/quest/feedback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
-  '/story-flow/quest': typeof StoryFlowloopQuestRoute
   '/story-flow/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
+  '/story-flow/quest/feedback': typeof StoryFlowloopQuestFeedbackRoute
+  '/story-flow/quest/proposal': typeof StoryFlowloopQuestProposalRoute
+  '/story-flow/quest/result': typeof StoryFlowloopQuestResultRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/story-flow': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
-  '/story-flow/quest': typeof StoryFlowloopQuestRoute
   '/story-flow/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/problem': typeof StoryFlowonboardingProblemRoute
+  '/story-flow/quest/feedback': typeof StoryFlowloopQuestFeedbackRoute
+  '/story-flow/quest/proposal': typeof StoryFlowloopQuestProposalRoute
+  '/story-flow/quest/result': typeof StoryFlowloopQuestResultRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,11 +114,13 @@ export interface FileRoutesById {
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
-  '/story-flow/(loop)/quest': typeof StoryFlowloopQuestRoute
   '/story-flow/(onboarding)/blurb': typeof StoryFlowonboardingBlurbRoute
   '/story-flow/(onboarding)/goal': typeof StoryFlowonboardingGoalRoute
   '/story-flow/(onboarding)/name': typeof StoryFlowonboardingNameRoute
   '/story-flow/(onboarding)/problem': typeof StoryFlowonboardingProblemRoute
+  '/story-flow/(loop)/quest/feedback': typeof StoryFlowloopQuestFeedbackRoute
+  '/story-flow/(loop)/quest/proposal': typeof StoryFlowloopQuestProposalRoute
+  '/story-flow/(loop)/quest/result': typeof StoryFlowloopQuestResultRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -108,33 +129,39 @@ export interface FileRouteTypes {
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
-    | '/story-flow/quest'
     | '/story-flow/blurb'
     | '/story-flow/goal'
     | '/story-flow/name'
     | '/story-flow/problem'
+    | '/story-flow/quest/feedback'
+    | '/story-flow/quest/proposal'
+    | '/story-flow/quest/result'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/story-flow'
     | '/api/generate/data'
     | '/api/generate/image'
-    | '/story-flow/quest'
     | '/story-flow/blurb'
     | '/story-flow/goal'
     | '/story-flow/name'
     | '/story-flow/problem'
+    | '/story-flow/quest/feedback'
+    | '/story-flow/quest/proposal'
+    | '/story-flow/quest/result'
   id:
     | '__root__'
     | '/'
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
-    | '/story-flow/(loop)/quest'
     | '/story-flow/(onboarding)/blurb'
     | '/story-flow/(onboarding)/goal'
     | '/story-flow/(onboarding)/name'
     | '/story-flow/(onboarding)/problem'
+    | '/story-flow/(loop)/quest/feedback'
+    | '/story-flow/(loop)/quest/proposal'
+    | '/story-flow/(loop)/quest/result'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -142,11 +169,13 @@ export interface RootRouteChildren {
   StoryFlowIndexRoute: typeof StoryFlowIndexRoute
   ApiGenerateDataRoute: typeof ApiGenerateDataRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
-  StoryFlowloopQuestRoute: typeof StoryFlowloopQuestRoute
   StoryFlowonboardingBlurbRoute: typeof StoryFlowonboardingBlurbRoute
   StoryFlowonboardingGoalRoute: typeof StoryFlowonboardingGoalRoute
   StoryFlowonboardingNameRoute: typeof StoryFlowonboardingNameRoute
   StoryFlowonboardingProblemRoute: typeof StoryFlowonboardingProblemRoute
+  StoryFlowloopQuestFeedbackRoute: typeof StoryFlowloopQuestFeedbackRoute
+  StoryFlowloopQuestProposalRoute: typeof StoryFlowloopQuestProposalRoute
+  StoryFlowloopQuestResultRoute: typeof StoryFlowloopQuestResultRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -193,13 +222,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoryFlowonboardingBlurbRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/story-flow/(loop)/quest': {
-      id: '/story-flow/(loop)/quest'
-      path: '/story-flow/quest'
-      fullPath: '/story-flow/quest'
-      preLoaderRoute: typeof StoryFlowloopQuestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/generate/image': {
       id: '/api/generate/image'
       path: '/api/generate/image'
@@ -214,6 +236,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/story-flow/(loop)/quest/result': {
+      id: '/story-flow/(loop)/quest/result'
+      path: '/story-flow/quest/result'
+      fullPath: '/story-flow/quest/result'
+      preLoaderRoute: typeof StoryFlowloopQuestResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story-flow/(loop)/quest/proposal': {
+      id: '/story-flow/(loop)/quest/proposal'
+      path: '/story-flow/quest/proposal'
+      fullPath: '/story-flow/quest/proposal'
+      preLoaderRoute: typeof StoryFlowloopQuestProposalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/story-flow/(loop)/quest/feedback': {
+      id: '/story-flow/(loop)/quest/feedback'
+      path: '/story-flow/quest/feedback'
+      fullPath: '/story-flow/quest/feedback'
+      preLoaderRoute: typeof StoryFlowloopQuestFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -222,11 +265,13 @@ const rootRouteChildren: RootRouteChildren = {
   StoryFlowIndexRoute: StoryFlowIndexRoute,
   ApiGenerateDataRoute: ApiGenerateDataRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
-  StoryFlowloopQuestRoute: StoryFlowloopQuestRoute,
   StoryFlowonboardingBlurbRoute: StoryFlowonboardingBlurbRoute,
   StoryFlowonboardingGoalRoute: StoryFlowonboardingGoalRoute,
   StoryFlowonboardingNameRoute: StoryFlowonboardingNameRoute,
   StoryFlowonboardingProblemRoute: StoryFlowonboardingProblemRoute,
+  StoryFlowloopQuestFeedbackRoute: StoryFlowloopQuestFeedbackRoute,
+  StoryFlowloopQuestProposalRoute: StoryFlowloopQuestProposalRoute,
+  StoryFlowloopQuestResultRoute: StoryFlowloopQuestResultRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

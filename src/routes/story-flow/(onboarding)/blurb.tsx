@@ -1,14 +1,14 @@
 import { Button } from '#/components/ui/button'
 import { StoryCopy, StoryFrame, StoryHeading, StoryKicker, StorySurface } from '#/components/story-flow/story-primitives'
 import type { IStoryBlueprint } from '#/modules/ai/schemas/metaphors'
-import { useStoryBlueprintQuery, useStoryImageQuery } from '#/modules/story-flow/story-generation'
+import { useStoryBlueprintQuery, useStoryImageQuery } from '#/modules/story-flow/onboarding'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ImageIcon, ShieldAlert } from 'lucide-react'
 import { useEffect } from 'react'
 import { Route as StartRoute } from "#/routes/story-flow/(onboarding)/name";
-import { Route as NextRoute } from "#/routes/story-flow/(loop)/quest";
+import { Route as NextRoute } from "#/routes/story-flow/(loop)/quest/proposal";
 
 export const Route = createFileRoute('/story-flow/(onboarding)/blurb')({
   component: RouteComponent,
