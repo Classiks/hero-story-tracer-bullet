@@ -1,12 +1,5 @@
 import { Button } from '#/components/ui/button'
 import {
-  StoryCopy,
-  StoryFrame,
-  StoryHeading,
-  StoryKicker,
-  StorySurface,
-} from '#/components/story-flow/story-primitives'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -14,81 +7,66 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '#/components/ui/dialog'
-import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import {
-  type IQuestProposal,
-} from '#/modules/ai/schemas/metaphors'
-import { useStoryBlueprintQuery } from '#/modules/story-flow/onboarding'
-import { useOnboardingStore } from '#/state/onboarding'
+  StoryCopy,
+  StoryFrame,
+  StoryHeading,
+  StoryKicker,
+  StorySurface,
+} from '#/components/story-flow/story-primitives'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
+import type { PersistedQuest } from '#/modules/story-flow/persisted-types'
+import {
+  useAcceptQuestMutation,
+  useCreateQuestMutation,
+  useStorySessionQuery,
+} from '#/modules/story-flow/story-api-client'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Check,
   CircleQuestionMark,
+  Loader2,
   RefreshCw,
   ScrollText,
   Sparkles,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
-import { Route as NextRoute } from '#/routes/story-flow/(loop)/quest/feedback'
-import { useQuestProposalQuery } from '#/modules/story-flow/quest'
+import { Route as FeedbackRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback'
 
-export const Route = createFileRoute('/story-flow/(loop)/quest/proposal')({
+export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/quest/proposal')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const navigate = useNavigate()
-  const rawName = useOnboardingStore((state) => state.name)
-  const rawGoal = useOnboardingStore((state) => state.goal)
-  const rawChallenge = useOnboardingStore((state) => state.mainProblem)
+  const { storyId } = Route.useParams()
+  const sessionQuery = useStorySessionQuery(storyId)
+  const createQuest = useCreateQuestMutation()
+  const requested = useRef(false)
+  const latestQuest = sessionQuery.data?.latestQuest
+  const shouldCreateQuest =
+    sessionQuery.isSuccess &&
+    (!latestQuest || ['completed', 'unresolved', 'rejected'].includes(latestQuest.status))
+  const visibleQuest = createQuest.data?.quest ?? latestQuest
 
-  const name = rawName.trim()
-  const goal = rawGoal.trim()
-  const challenge = rawChallenge.trim()
-  const hasInputs = Boolean(name && goal && challenge)
+  useEffect(() => {
+    if (!shouldCreateQuest || requested.current) {
+      return
+    }
 
-  const storyQuery = useStoryBlueprintQuery({ challenge, enabled: hasInputs, goal, name })
-  const proposalQuery = useQuestProposalQuery({
-    challenge,
-    enabled: hasInputs && Boolean(storyQuery.data),
-    goal,
-    name,
-    storyBlueprint: storyQuery.data,
-  })
+    requested.current = true
+    createQuest.mutate(storyId, {
+      onError: () => {
+        requested.current = false
+      },
+    })
+  }, [createQuest, shouldCreateQuest, storyId])
 
-  if (!hasInputs) {
-    return (
-      <StoryFrame>
-        <div className="flex min-h-svh flex-col justify-between px-5 py-6">
-          <div>
-            <StoryKicker>Chronicle paused</StoryKicker>
-            <StoryHeading accent="quest.">Missing</StoryHeading>
-            <StoryCopy>
-              The story needs a hero, a quest, and a challenge before it can
-              shape the next step.
-            </StoryCopy>
-          </div>
-
-          <Button
-            onClick={() => navigate({ to: StartRoute.to })}
-            size="hero"
-            variant="hero"
-          >
-            <ArrowLeft />
-            Start onboarding
-          </Button>
-        </div>
-      </StoryFrame>
-    )
-  }
-
-  const isLoading = storyQuery.isPending || proposalQuery.isPending
-  const isRegeneratingProposal = proposalQuery.isRefetching
-  const hasError = storyQuery.isError || proposalQuery.isError
-  const proposal = proposalQuery.data
+  const isLoading = sessionQuery.isPending || (shouldCreateQuest && createQuest.isPending)
+  const hasError = sessionQuery.isError || createQuest.isError
 
   return (
     <StoryFrame>
@@ -100,19 +78,29 @@ function RouteComponent() {
         >
           <StoryKicker>Active quest</StoryKicker>
 
-          {isLoading && <QuestLoading name={name} />}
+          {isLoading && <QuestLoading name={sessionQuery.data?.story.name} />}
 
           {hasError && (
             <QuestErrorState
-              onRetry={() => void refetchFailedQueries({ proposalQuery, storyQuery })}
+              onRetry={() => {
+                requested.current = false
+                if (sessionQuery.isError) {
+                  void sessionQuery.refetch()
+                  return
+                }
+                createQuest.mutate(storyId)
+              }}
             />
           )}
 
-          {proposal && (
+          {visibleQuest && (
             <QuestPresentation
-              isRegeneratingProposal={isRegeneratingProposal}
-              onRegenerateProposal={() => void proposalQuery.refetch()}
-              proposal={proposal}
+              isCreatingQuest={createQuest.isPending}
+              onRegenerateQuest={() => {
+                requested.current = true
+                createQuest.mutate(storyId)
+              }}
+              quest={visibleQuest}
             />
           )}
         </motion.div>
@@ -121,7 +109,7 @@ function RouteComponent() {
   )
 }
 
-function QuestLoading({ name }: { name: string }) {
+function QuestLoading({ name }: { name: string | undefined }) {
   return (
     <div className="mt-12">
       <motion.div
@@ -136,8 +124,8 @@ function QuestLoading({ name }: { name: string }) {
         Preparing
       </StoryHeading>
       <StoryCopy wide>
-        The narrator is reading the path ahead for {name} and shaping one step
-        into a quest worth answering.
+        The narrator is reading the path ahead{name ? ` for ${name}` : ''} and
+        shaping one step into a quest worth answering.
       </StoryCopy>
     </div>
   )
@@ -166,20 +154,27 @@ function QuestErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 function QuestPresentation({
-  isRegeneratingProposal,
-  onRegenerateProposal,
-  proposal,
+  isCreatingQuest,
+  onRegenerateQuest,
+  quest,
 }: {
-  isRegeneratingProposal: boolean
-  onRegenerateProposal: () => void
-  proposal: IQuestProposal
+  isCreatingQuest: boolean
+  onRegenerateQuest: () => void
+  quest: PersistedQuest
 }) {
   const navigate = useNavigate()
-  const { quest, recommendedTask } = proposal
+  const acceptQuest = useAcceptQuestMutation()
 
   function handleAcceptQuest() {
-    void new Audio('/assets/sounds/quest-accepted.mp3').play().catch(() => undefined)
-    navigate({ to: NextRoute.to });
+    acceptQuest.mutate(quest.id, {
+      onSuccess: ({ quest: acceptedQuest }) => {
+        void new Audio('/assets/sounds/quest-accepted.mp3').play().catch(() => undefined)
+        void navigate({
+          params: { questId: acceptedQuest.id, storyId: acceptedQuest.storyId },
+          to: FeedbackRoute.to,
+        })
+      },
+    })
   }
 
   return (
@@ -190,7 +185,7 @@ function QuestPresentation({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        {quest.quest}
+        {quest.quest.quest}
       </StoryHeading>
 
       <StorySurface
@@ -199,7 +194,7 @@ function QuestPresentation({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.06 }}
       >
-        <p className="text-base leading-relaxed text-foreground/85">{quest.content}</p>
+        <p className="text-base leading-relaxed text-foreground/85">{quest.quest.content}</p>
       </StorySurface>
 
       <StorySurface
@@ -212,13 +207,19 @@ function QuestPresentation({
           Action
         </p>
         <p className="mt-3 text-lg font-semibold leading-snug text-foreground">
-          {quest.action}
+          {quest.quest.action}
         </p>
       </StorySurface>
 
       <div className="mt-6 flex items-center gap-3">
-        <Button className="flex-1" onClick={handleAcceptQuest} size="hero" variant="hero">
-          <Check />
+        <Button
+          className="flex-1"
+          disabled={acceptQuest.isPending}
+          onClick={handleAcceptQuest}
+          size="hero"
+          variant="hero"
+        >
+          {acceptQuest.isPending ? <Loader2 className="animate-spin" /> : <Check />}
           Accept
         </Button>
 
@@ -226,12 +227,12 @@ function QuestPresentation({
           <TooltipTrigger asChild>
             <Button
               aria-label="Generate a new quest"
-              disabled={isRegeneratingProposal}
-              onClick={onRegenerateProposal}
+              disabled={isCreatingQuest}
+              onClick={onRegenerateQuest}
               size="hero-icon"
               variant="outline"
             >
-              <RefreshCw className={isRegeneratingProposal ? 'animate-spin' : undefined} />
+              <RefreshCw className={isCreatingQuest ? 'animate-spin' : undefined} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -239,22 +240,13 @@ function QuestPresentation({
           </TooltipContent>
         </Tooltip>
 
-        <QuestReasonDialog
-          quest={quest}
-          task={recommendedTask}
-        />
+        <QuestReasonDialog quest={quest} />
       </div>
     </div>
   )
 }
 
-function QuestReasonDialog({
-  quest,
-  task,
-}: {
-  quest: IQuestProposal['quest']
-  task: IQuestProposal['recommendedTask']
-}) {
+function QuestReasonDialog({ quest }: { quest: PersistedQuest }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -282,18 +274,18 @@ function QuestReasonDialog({
         <div className="space-y-3 text-sm">
           <section className="rounded-2xl border border-border bg-card/60 p-4">
             <h3 className="font-semibold text-foreground">Recommended step</h3>
-            <p className="mt-2 leading-relaxed text-muted-foreground">{task?.task}</p>
+            <p className="mt-2 leading-relaxed text-muted-foreground">{quest.recommendedTask.task}</p>
           </section>
 
           <section className="rounded-2xl border border-border bg-card/60 p-4">
             <h3 className="font-semibold text-foreground">Why</h3>
-            <p className="mt-2 leading-relaxed text-muted-foreground">{task?.reasoning}</p>
+            <p className="mt-2 leading-relaxed text-muted-foreground">{quest.recommendedTask.reasoning}</p>
           </section>
 
           <section className="rounded-2xl border border-border bg-card/60 p-4">
             <h3 className="font-semibold text-foreground">What is being translated</h3>
             <div className="mt-3 space-y-3">
-              {quest.metaphors.map((metaphor) => (
+              {quest.quest.metaphors.map((metaphor) => (
                 <div key={`${metaphor.real}:${metaphor.metaphor}`} className="space-y-1">
                   <p className="font-medium leading-snug text-foreground">{metaphor.real}</p>
                   <p className="leading-relaxed text-muted-foreground">{metaphor.metaphor}</p>
@@ -305,19 +297,4 @@ function QuestReasonDialog({
       </DialogContent>
     </Dialog>
   )
-}
-
-async function refetchFailedQueries({
-  proposalQuery,
-  storyQuery,
-}: {
-  proposalQuery: ReturnType<typeof useQuestProposalQuery>
-  storyQuery: ReturnType<typeof useStoryBlueprintQuery>
-}) {
-  if (storyQuery.isError) {
-    await storyQuery.refetch()
-    return
-  }
-
-  await proposalQuery.refetch()
 }

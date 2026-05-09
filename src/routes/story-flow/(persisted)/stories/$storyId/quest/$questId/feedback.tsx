@@ -6,18 +6,20 @@ import {
   StoryKicker,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
-import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { Textarea } from '#/components/ui/textarea'
-import { useStoryBlueprintQuery } from '#/modules/story-flow/onboarding'
-import { useQuestProposalQuery } from '#/modules/story-flow/quest'
+import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
+import {
+  useCompleteQuestMutation,
+  useQuestQuery,
+} from '#/modules/story-flow/story-api-client'
 import type { QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
-import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Check,
   CircleQuestionMark,
   CircleSlash,
+  Loader2,
   NotebookPen,
   ScrollText,
   Sparkles,
@@ -26,71 +28,37 @@ import {
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
-import { Route as NextRoute } from "#/routes/story-flow/(loop)/quest/result";
+import { Route as ResultRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/$questId/result'
 
-export const Route = createFileRoute('/story-flow/(loop)/quest/feedback')({
+export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const navigate = useNavigate()
-
-  const rawName = useOnboardingStore((state) => state.name)
-  const rawGoal = useOnboardingStore((state) => state.goal)
-  const rawChallenge = useOnboardingStore((state) => state.mainProblem)
-
-  const name = rawName.trim()
-  const goal = rawGoal.trim()
-  const challenge = rawChallenge.trim()
-  const hasInputs = Boolean(name && goal && challenge)
-
+  const { questId, storyId } = Route.useParams()
+  const questQuery = useQuestQuery(questId)
+  const completeQuest = useCompleteQuestMutation()
   const [note, setNote] = useState('')
-
-  const storyQuery = useStoryBlueprintQuery({ challenge, enabled: hasInputs, goal, name })
-  const proposalQuery = useQuestProposalQuery({
-    challenge,
-    enabled: hasInputs && Boolean(storyQuery.data),
-    goal,
-    name,
-    storyBlueprint: storyQuery.data,
-  })
-
-  if (!hasInputs) {
-    return (
-      <StoryFrame>
-        <div className="flex min-h-svh flex-col justify-between px-5 py-6">
-          <div>
-            <StoryKicker>Quest feedback</StoryKicker>
-            <StoryHeading accent="missing.">Context</StoryHeading>
-            <StoryCopy>
-              The story needs a hero, a goal, and a challenge before it can
-              record how the quest went.
-            </StoryCopy>
-          </div>
-
-          <Button
-            onClick={() => navigate({ to: StartRoute.to })}
-            size="hero"
-            variant="hero"
-          >
-            <ArrowLeft />
-            Start onboarding
-          </Button>
-        </div>
-      </StoryFrame>
-    )
-  }
-
-  const quest = proposalQuery.data?.quest
-  const isLoading = storyQuery.isPending || proposalQuery.isPending
-  const hasError = storyQuery.isError || proposalQuery.isError
+  const quest = questQuery.data?.quest
   const trimmedNote = note.trim()
 
-  function navigateToResult(outcomeStatus: QuestOutcomeStatus) {
-    void navigate({
-      to: NextRoute.to,
-      search: { outcomeStatus, note: trimmedNote || undefined },
-    })
+  function complete(outcomeStatus: QuestOutcomeStatus) {
+    completeQuest.mutate(
+      {
+        feedback: trimmedNote ? { note: trimmedNote } : {},
+        outcomeStatus,
+        questId,
+      },
+      {
+        onSuccess: () => {
+          void navigate({
+            params: { questId, storyId },
+            to: ResultRoute.to,
+          })
+        },
+      },
+    )
   }
 
   return (
@@ -98,14 +66,23 @@ function RouteComponent() {
       <main className="min-h-svh px-5 py-6">
         <StoryKicker>Quest feedback</StoryKicker>
 
-        {isLoading && <QuestFeedbackLoading />}
+        {questQuery.isPending && <QuestFeedbackLoading />}
 
-        {hasError && (
+        {questQuery.isError && (
           <StorySurface className="mt-12 p-5">
             <h1 className="font-semibold text-foreground">The quest could not be loaded.</h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Go back to the quest proposal and try again.
+              Go back to the story and try again.
             </p>
+            <Button
+              className="mt-5 w-full"
+              onClick={() => navigate({ to: StartRoute.to })}
+              size="hero"
+              variant="hero"
+            >
+              <ArrowLeft />
+              Start onboarding
+            </Button>
           </StorySurface>
         )}
 
@@ -121,13 +98,13 @@ function RouteComponent() {
                 <QuestSummaryItem
                   icon={<ScrollText className="size-5" />}
                   label="Quest"
-                  value={quest.quest}
+                  value={quest.quest.quest}
                 />
                 <QuestSummaryItem
                   accent
                   icon={<Swords className="size-5" />}
                   label="Action"
-                  value={quest.action}
+                  value={quest.quest.action}
                 />
               </div>
             </StorySurface>
@@ -164,17 +141,33 @@ function RouteComponent() {
               />
             </StorySurface>
 
+            {completeQuest.isError && (
+              <div className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-foreground">
+                The result could not be written. Try marking the quest again.
+              </div>
+            )}
+
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Mark quest
               </p>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <Button onClick={() => navigateToResult('completed')} size="hero" variant="hero">
-                <Check />
+              <Button
+                disabled={completeQuest.isPending}
+                onClick={() => complete('completed')}
+                size="hero"
+                variant="hero"
+              >
+                {completeQuest.isPending ? <Loader2 className="animate-spin" /> : <Check />}
                 Complete
               </Button>
-              <Button onClick={() => navigateToResult('unresolved')} size="hero" variant="outline">
+              <Button
+                disabled={completeQuest.isPending}
+                onClick={() => complete('unresolved')}
+                size="hero"
+                variant="outline"
+              >
                 <CircleSlash />
                 Unresolved
               </Button>

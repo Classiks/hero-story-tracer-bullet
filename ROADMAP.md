@@ -326,6 +326,20 @@ Acceptance criteria:
 
 Goal: make onboarding produce a durable story record.
 
+Status: done.
+
+What changed:
+
+- Added domain story APIs so onboarding creates a persisted story through the
+  backend instead of generating canonical story state in the client.
+- Backend story creation now generates the blueprint and image, uploads the image
+  to Supabase Storage, stores the asset path, and returns a signed image URL.
+- Added persisted story response types and client hooks keyed by stable story IDs.
+- Reworked the onboarding blurb step into a creation/loading screen that
+  redirects to `/story-flow/stories/:storyId/blurb`.
+- Added the persisted story blurb screen, which reloads the blueprint and image
+  from Supabase by ID.
+
 Work:
 
 - Replace frontend story blueprint generation with a backend story creation
@@ -346,6 +360,21 @@ Acceptance criteria:
 
 Goal: make the active quest a durable record.
 
+Status: done.
+
+What changed:
+
+- Added backend quest creation, quest loading, story-session loading, and quest
+  acceptance APIs.
+- Quest proposals are now stored as one row containing both the hidden
+  recommended task and visible quest.
+- Quest sequence numbers are assigned per story without adding a `current_quest_id`
+  coupling or a single-active-quest constraint.
+- Replaced the old client-only quest proposal route with a persisted story route
+  that loads or creates the next proposal by `storyId`.
+- Accepting a quest now updates persisted quest status and navigates by durable
+  `storyId` and `questId`.
+
 Work:
 
 - Add a backend operation to generate the next quest for a story.
@@ -365,6 +394,22 @@ Acceptance criteria:
 ### Phase 4: Persist Quest Feedback And Result
 
 Goal: make the completion loop durable.
+
+Status: done.
+
+What changed:
+
+- Added a backend quest completion API that accepts outcome status and optional
+  feedback.
+- Completion stores outcome, feedback, and generated result text on the quest.
+- Result image generation uploads to Supabase Storage and stores an asset path;
+  if image generation fails after text generation, the persisted text result and
+  quest outcome are kept.
+- Added persisted feedback and result routes that load quest state by `questId`.
+- Updated React Query mutation hooks to write returned story and quest records
+  into the cache so navigation does not show stale pre-completion data.
+- Preserved mock mode through the backend service, so mock data and mock images
+  still exercise the full persisted flow without live AI calls.
 
 Work:
 

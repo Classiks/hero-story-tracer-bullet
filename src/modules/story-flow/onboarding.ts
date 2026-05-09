@@ -1,4 +1,5 @@
 import { StoryBlueprint, type IStoryBlueprint } from '#/modules/ai/schemas/metaphors'
+import { createStoryBlueprintPrompt, createStoryImagePrompt } from '#/modules/story-flow/prompts'
 import { useQuery } from '@tanstack/react-query'
 
 export function useStoryBlueprintQuery({
@@ -74,58 +75,4 @@ export function useStoryImageQuery(blueprint: IStoryBlueprint | undefined) {
     retry: false,
     staleTime: Infinity,
   })
-}
-
-export function createStoryBlueprintPrompt({
-  challenge,
-  goal,
-  name,
-}: {
-  challenge: string
-  goal: string
-  name: string
-}) {
-  return `
-Create a motivational hero-story blueprint for a task-support app.
-
-The output will be shown directly to the user on a mobile screen. Make it vivid,
-specific, and energizing without sounding like generic fantasy lore.
-
-User:
-- Name: ${name}
-- Goal: ${goal}
-- Challenge: ${challenge}
-
-Rules:
-- Address the user by name in the story blurb.
-- Keep the title short and punchy.
-- The metaphors must connect clearly to the actual goal and challenge.
-- The enemy metaphor should make the challenge feel faceable, not hopeless.
-- The reward metaphor should feel emotionally meaningful, not just material.
-- The call to action should be one short sentence.
-`
-}
-
-export function createStoryImagePrompt(blueprint: IStoryBlueprint) {
-  return `
-Create a wide 16:9 heroic fantasy banner illustration for this motivational story.
-
-Title: ${blueprint.title}
-Story: ${blueprint.storyBlurb}
-Hero metaphor: ${blueprint.metaphors.hero}
-Challenge metaphor: ${blueprint.metaphors.enemy}
-Reward metaphor: ${blueprint.metaphors.reward}
-
-Composition:
-- Wide banner framing, strong central silhouette, readable on a phone.
-- The hero should be moving toward or facing the challenge.
-- Include a visual hint of the reward without cluttering the image.
-- Cartoonish pixel-art inspired illustration with chunky shapes, clean silhouettes,
-  simplified details, and warm storybook charm.
-- Use a painterly pixel aesthetic, like a handcrafted animated short still, not a
-  screenshot from a video game.
-- Bright, adventurous lighting with clear color contrast, not dark or muddy.
-- No text, no captions, no UI, no menus, no buttons, no icons, no health bars, no
-  mana bars, no stats, no inventory, no minimap, no game HUD.
-`
 }

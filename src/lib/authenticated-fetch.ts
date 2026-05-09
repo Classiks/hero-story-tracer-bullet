@@ -1,14 +1,7 @@
-import { supabase } from '#/lib/supabase'
+import { ensureAnonymousSession } from '#/lib/supabase-auth'
 
 export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}) {
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession()
-
-  if (error) {
-    throw error
-  }
+  const session = await ensureAnonymousSession()
 
   if (!session) {
     throw new Error('Supabase session is required')
