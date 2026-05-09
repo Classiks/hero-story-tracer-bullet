@@ -458,6 +458,18 @@ Minimum test coverage:
 Mock AI generation in most tests. Reserve live provider calls for manual checks
 or a small explicit integration suite.
 
+## Mock Mode Requirement
+
+The app must always support running the full story flow without live AI calls.
+The current direction is good: use model-specific mocked data responses and a
+stable mocked image response so development can exercise onboarding, proposal,
+feedback, result, persistence, and navigation without spending tokens or waiting
+on providers.
+
+Future backend and Supabase work must preserve this capability. If generation
+moves behind domain routes, mock mode should move with it so the same user flow
+can create mock-persisted stories, quests, results, and image asset references.
+
 ## Implementation Principles
 
 - Prefer domain operations over generic generation endpoints in user-facing
