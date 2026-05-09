@@ -8,7 +8,13 @@ import {
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { useStoryBlueprintQuery } from '#/modules/story-flow/onboarding'
-import { useQuestQuery, useRecommendedTaskQuery } from '#/modules/story-flow/quest'
+import { useQuestProposalQuery } from '#/modules/story-flow/quest'
+import {
+  isQuestOutcomeStatus,
+  questOutcomeSucceeded,
+  type QuestFeedback,
+  type QuestOutcomeStatus,
+} from '#/modules/story-flow/quest-outcome'
 import { useQuestResultImageQuery, useQuestResultTextQuery } from '#/modules/story-flow/quest-result'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -19,14 +25,14 @@ import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
 import { Route as NextRoute } from "#/routes/story-flow/(loop)/quest/proposal"
 
 type QuestResult = {
-  success: boolean
+  outcomeStatus: QuestOutcomeStatus
   note: string
 }
 
 export const Route = createFileRoute('/story-flow/(loop)/quest/result')({
   component: RouteComponent,
   validateSearch: (search): QuestResult => ({
-    success: search.success === true || search.success === 'true',
+    outcomeStatus: resolveOutcomeStatus(search),
     note: typeof search.note === 'string' ? search.note : '',
   }),
 })
@@ -44,10 +50,12 @@ function RouteComponent() {
   const challenge = rawChallenge.trim()
   const hasInputs = Boolean(name && goal && challenge)
   const note = searchParams.note.trim()
-  const [celebrationDone, setCelebrationDone] = useState(!searchParams.success)
+  const feedback: QuestFeedback = note ? { note } : {}
+  const outcomeSucceeded = questOutcomeSucceeded(searchParams.outcomeStatus)
+  const [celebrationDone, setCelebrationDone] = useState(!outcomeSucceeded)
 
   useEffect(() => {
-    if (!searchParams.success) {
+    if (!outcomeSucceeded) {
       setCelebrationDone(true)
       return
     }
@@ -55,44 +63,35 @@ function RouteComponent() {
     setCelebrationDone(false)
     const timeoutId = window.setTimeout(() => setCelebrationDone(true), 1650)
     return () => window.clearTimeout(timeoutId)
-  }, [searchParams.success])
+  }, [outcomeSucceeded])
 
   const canGenerateResult = hasInputs && celebrationDone
 
   const storyQuery = useStoryBlueprintQuery({ challenge, enabled: canGenerateResult, goal, name })
-  const taskQuery = useRecommendedTaskQuery({
+  const proposalQuery = useQuestProposalQuery({
     challenge,
     enabled: canGenerateResult && Boolean(storyQuery.data),
     goal,
     name,
     storyBlueprint: storyQuery.data,
   })
-  const questQuery = useQuestQuery({
-    challenge,
-    enabled: canGenerateResult && Boolean(storyQuery.data && taskQuery.data),
-    goal,
-    name,
-    storyBlueprint: storyQuery.data,
-    task: taskQuery.data,
-    taskGeneratedAt: taskQuery.dataUpdatedAt,
-  })
   const resultTextQuery = useQuestResultTextQuery({
     challenge,
-    enabled: canGenerateResult && Boolean(storyQuery.data && taskQuery.data && questQuery.data),
+    enabled: canGenerateResult && Boolean(storyQuery.data && proposalQuery.data),
+    feedback,
     goal,
     name,
-    note,
-    quest: questQuery.data,
+    outcomeStatus: searchParams.outcomeStatus,
+    quest: proposalQuery.data?.quest,
     storyBlueprint: storyQuery.data,
-    success: searchParams.success,
-    task: taskQuery.data,
+    task: proposalQuery.data?.recommendedTask,
   })
   const imageQuery = useQuestResultImageQuery({
-    enabled: Boolean(storyQuery.data && questQuery.data && resultTextQuery.data),
-    quest: questQuery.data,
+    enabled: Boolean(storyQuery.data && proposalQuery.data && resultTextQuery.data),
+    outcomeStatus: searchParams.outcomeStatus,
+    quest: proposalQuery.data?.quest,
     resultText: resultTextQuery.data,
     storyBlueprint: storyQuery.data,
-    success: searchParams.success,
   })
 
   if (!hasInputs) {
@@ -123,23 +122,21 @@ function RouteComponent() {
 
   const isLoading =
     storyQuery.isPending ||
-    taskQuery.isPending ||
-    questQuery.isPending ||
+    proposalQuery.isPending ||
     resultTextQuery.isPending
   const hasError =
     storyQuery.isError ||
-    taskQuery.isError ||
-    questQuery.isError ||
+    proposalQuery.isError ||
     resultTextQuery.isError
 
   return (
     <StoryFrame>
       <main className="min-h-svh px-5 py-6">
-        <StoryKicker>{searchParams.success ? 'Quest complete' : 'Quest unresolved'}</StoryKicker>
+        <StoryKicker>{outcomeSucceeded ? 'Quest complete' : 'Quest unresolved'}</StoryKicker>
 
-        {searchParams.success && !celebrationDone && <QuestCompleteCelebration />}
+        {outcomeSucceeded && !celebrationDone && <QuestCompleteCelebration />}
 
-        {celebrationDone && isLoading && <QuestResultLoading success={searchParams.success} />}
+        {celebrationDone && isLoading && <QuestResultLoading outcomeStatus={searchParams.outcomeStatus} />}
 
         {celebrationDone && hasError && (
           <StorySurface className="mt-12 p-5">
@@ -154,11 +151,11 @@ function RouteComponent() {
         {celebrationDone && resultTextQuery.data && (
           <motion.div
             className="mt-10 pb-5"
-            initial={{ opacity: 0, y: searchParams.success ? 22 : 14, scale: searchParams.success ? 0.98 : 1 }}
+            initial={{ opacity: 0, y: outcomeSucceeded ? 22 : 14, scale: outcomeSucceeded ? 0.98 : 1 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: searchParams.success ? 0.48 : 0.36, ease: 'easeOut' }}
+            transition={{ duration: outcomeSucceeded ? 0.48 : 0.36, ease: 'easeOut' }}
           >
-            <ResultStatusCard success={searchParams.success} />
+            <ResultStatusCard outcomeStatus={searchParams.outcomeStatus} />
 
             <QuestResultImage
               imageData={imageQuery.data}
@@ -256,7 +253,9 @@ function QuestCompleteCelebration() {
   )
 }
 
-function QuestResultLoading({ success }: { success: boolean }) {
+function QuestResultLoading({ outcomeStatus }: { outcomeStatus: QuestOutcomeStatus }) {
+  const success = questOutcomeSucceeded(outcomeStatus)
+
   return (
     <div className="mt-12">
       <motion.div
@@ -286,7 +285,8 @@ function QuestResultLoading({ success }: { success: boolean }) {
   )
 }
 
-function ResultStatusCard({ success }: { success: boolean }) {
+function ResultStatusCard({ outcomeStatus }: { outcomeStatus: QuestOutcomeStatus }) {
+  const success = questOutcomeSucceeded(outcomeStatus)
   const Icon = success ? Award : CircleSlash
 
   return (
@@ -339,6 +339,18 @@ function ResultStatusCard({ success }: { success: boolean }) {
       </div>
     </StorySurface>
   )
+}
+
+function resolveOutcomeStatus(search: Record<string, unknown>): QuestOutcomeStatus {
+  if (isQuestOutcomeStatus(search.outcomeStatus)) {
+    return search.outcomeStatus
+  }
+
+  if (search.success === true || search.success === 'true') {
+    return 'completed'
+  }
+
+  return 'unresolved'
 }
 
 function FeedbackNote({ note }: { note: string }) {

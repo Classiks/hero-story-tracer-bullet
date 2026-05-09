@@ -16,8 +16,7 @@ import {
 } from '#/components/ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import {
-  type IQuest,
-  type IRecommendedTask,
+  type IQuestProposal,
 } from '#/modules/ai/schemas/metaphors'
 import { useStoryBlueprintQuery } from '#/modules/story-flow/onboarding'
 import { useOnboardingStore } from '#/state/onboarding'
@@ -26,7 +25,6 @@ import {
   ArrowLeft,
   Check,
   CircleQuestionMark,
-  Loader2,
   RefreshCw,
   ScrollText,
   Sparkles,
@@ -35,7 +33,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
 import { Route as NextRoute } from '#/routes/story-flow/(loop)/quest/feedback'
-import { useQuestQuery, useRecommendedTaskQuery } from '#/modules/story-flow/quest'
+import { useQuestProposalQuery } from '#/modules/story-flow/quest'
 
 export const Route = createFileRoute('/story-flow/(loop)/quest/proposal')({
   component: RouteComponent,
@@ -53,21 +51,12 @@ function RouteComponent() {
   const hasInputs = Boolean(name && goal && challenge)
 
   const storyQuery = useStoryBlueprintQuery({ challenge, enabled: hasInputs, goal, name })
-  const taskQuery = useRecommendedTaskQuery({
+  const proposalQuery = useQuestProposalQuery({
     challenge,
     enabled: hasInputs && Boolean(storyQuery.data),
     goal,
     name,
     storyBlueprint: storyQuery.data,
-  })
-  const questQuery = useQuestQuery({
-    challenge,
-    enabled: hasInputs && Boolean(storyQuery.data && taskQuery.data),
-    goal,
-    name,
-    storyBlueprint: storyQuery.data,
-    task: taskQuery.data,
-    taskGeneratedAt: taskQuery.dataUpdatedAt,
   })
 
   if (!hasInputs) {
@@ -96,11 +85,10 @@ function RouteComponent() {
     )
   }
 
-  const isLoading = storyQuery.isPending || taskQuery.isPending || questQuery.isPending
-  const isRegeneratingQuest = questQuery.isRefetching
-  const isRegeneratingTask = taskQuery.isRefetching
-  const hasError = storyQuery.isError || taskQuery.isError || questQuery.isError
-  const quest = questQuery.data
+  const isLoading = storyQuery.isPending || proposalQuery.isPending
+  const isRegeneratingProposal = proposalQuery.isRefetching
+  const hasError = storyQuery.isError || proposalQuery.isError
+  const proposal = proposalQuery.data
 
   return (
     <StoryFrame>
@@ -116,18 +104,15 @@ function RouteComponent() {
 
           {hasError && (
             <QuestErrorState
-              onRetry={() => void refetchFailedQueries({ questQuery, storyQuery, taskQuery })}
+              onRetry={() => void refetchFailedQueries({ proposalQuery, storyQuery })}
             />
           )}
 
-          {quest && (
+          {proposal && (
             <QuestPresentation
-              isRegeneratingQuest={isRegeneratingQuest}
-              isRegeneratingTask={isRegeneratingTask}
-              onRegenerateQuest={() => void questQuery.refetch()}
-              onRegenerateTask={() => void taskQuery.refetch()}
-              quest={quest}
-              task={taskQuery.data}
+              isRegeneratingProposal={isRegeneratingProposal}
+              onRegenerateProposal={() => void proposalQuery.refetch()}
+              proposal={proposal}
             />
           )}
         </motion.div>
@@ -181,21 +166,16 @@ function QuestErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 function QuestPresentation({
-  isRegeneratingQuest,
-  isRegeneratingTask,
-  onRegenerateQuest,
-  onRegenerateTask,
-  quest,
-  task,
+  isRegeneratingProposal,
+  onRegenerateProposal,
+  proposal,
 }: {
-  isRegeneratingQuest: boolean
-  isRegeneratingTask: boolean
-  onRegenerateQuest: () => void
-  onRegenerateTask: () => void
-  quest: IQuest
-  task: IRecommendedTask | undefined
+  isRegeneratingProposal: boolean
+  onRegenerateProposal: () => void
+  proposal: IQuestProposal
 }) {
   const navigate = useNavigate()
+  const { quest, recommendedTask } = proposal
 
   function handleAcceptQuest() {
     void new Audio('/assets/sounds/quest-accepted.mp3').play().catch(() => undefined)
@@ -246,12 +226,12 @@ function QuestPresentation({
           <TooltipTrigger asChild>
             <Button
               aria-label="Generate a new quest"
-              disabled={isRegeneratingQuest}
-              onClick={onRegenerateQuest}
+              disabled={isRegeneratingProposal}
+              onClick={onRegenerateProposal}
               size="hero-icon"
               variant="outline"
             >
-              <RefreshCw className={isRegeneratingQuest ? 'animate-spin' : undefined} />
+              <RefreshCw className={isRegeneratingProposal ? 'animate-spin' : undefined} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -260,10 +240,8 @@ function QuestPresentation({
         </Tooltip>
 
         <QuestReasonDialog
-          isRegeneratingTask={isRegeneratingTask}
-          onRegenerateTask={onRegenerateTask}
           quest={quest}
-          task={task}
+          task={recommendedTask}
         />
       </div>
     </div>
@@ -271,15 +249,11 @@ function QuestPresentation({
 }
 
 function QuestReasonDialog({
-  isRegeneratingTask,
-  onRegenerateTask,
   quest,
   task,
 }: {
-  isRegeneratingTask: boolean
-  onRegenerateTask: () => void
-  quest: IQuest
-  task: IRecommendedTask | undefined
+  quest: IQuestProposal['quest']
+  task: IQuestProposal['recommendedTask']
 }) {
   const [open, setOpen] = useState(false)
 
@@ -327,17 +301,6 @@ function QuestReasonDialog({
               ))}
             </div>
           </section>
-
-          <Button
-            className="w-full"
-            disabled={isRegeneratingTask}
-            onClick={onRegenerateTask}
-            size="hero"
-            variant="outline"
-          >
-            {isRegeneratingTask && <Loader2 className="animate-spin" />}
-            Generate a new task
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -345,23 +308,16 @@ function QuestReasonDialog({
 }
 
 async function refetchFailedQueries({
-  questQuery,
+  proposalQuery,
   storyQuery,
-  taskQuery,
 }: {
-  questQuery: ReturnType<typeof useQuestQuery>
+  proposalQuery: ReturnType<typeof useQuestProposalQuery>
   storyQuery: ReturnType<typeof useStoryBlueprintQuery>
-  taskQuery: ReturnType<typeof useRecommendedTaskQuery>
 }) {
   if (storyQuery.isError) {
     await storyQuery.refetch()
     return
   }
 
-  if (taskQuery.isError) {
-    await taskQuery.refetch()
-    return
-  }
-
-  await questQuery.refetch()
+  await proposalQuery.refetch()
 }

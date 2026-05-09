@@ -9,7 +9,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { Textarea } from '#/components/ui/textarea'
 import { useStoryBlueprintQuery } from '#/modules/story-flow/onboarding'
-import { useQuestQuery, useRecommendedTaskQuery } from '#/modules/story-flow/quest'
+import { useQuestProposalQuery } from '#/modules/story-flow/quest'
+import type { QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
@@ -46,21 +47,12 @@ function RouteComponent() {
   const [note, setNote] = useState('')
 
   const storyQuery = useStoryBlueprintQuery({ challenge, enabled: hasInputs, goal, name })
-  const taskQuery = useRecommendedTaskQuery({
+  const proposalQuery = useQuestProposalQuery({
     challenge,
     enabled: hasInputs && Boolean(storyQuery.data),
     goal,
     name,
     storyBlueprint: storyQuery.data,
-  })
-  const questQuery = useQuestQuery({
-    challenge,
-    enabled: hasInputs && Boolean(storyQuery.data && taskQuery.data),
-    goal,
-    name,
-    storyBlueprint: storyQuery.data,
-    task: taskQuery.data,
-    taskGeneratedAt: taskQuery.dataUpdatedAt,
   })
 
   if (!hasInputs) {
@@ -89,15 +81,15 @@ function RouteComponent() {
     )
   }
 
-  const quest = questQuery.data
-  const isLoading = storyQuery.isPending || taskQuery.isPending || questQuery.isPending
-  const hasError = storyQuery.isError || taskQuery.isError || questQuery.isError
+  const quest = proposalQuery.data?.quest
+  const isLoading = storyQuery.isPending || proposalQuery.isPending
+  const hasError = storyQuery.isError || proposalQuery.isError
   const trimmedNote = note.trim()
 
-  function navigateToResult(success: boolean) {
+  function navigateToResult(outcomeStatus: QuestOutcomeStatus) {
     void navigate({
       to: NextRoute.to,
-      search: { success, note: trimmedNote || undefined },
+      search: { outcomeStatus, note: trimmedNote || undefined },
     })
   }
 
@@ -178,11 +170,11 @@ function RouteComponent() {
               </p>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <Button onClick={() => navigateToResult(true)} size="hero" variant="hero">
+              <Button onClick={() => navigateToResult('completed')} size="hero" variant="hero">
                 <Check />
                 Complete
               </Button>
-              <Button onClick={() => navigateToResult(false)} size="hero" variant="outline">
+              <Button onClick={() => navigateToResult('unresolved')} size="hero" variant="outline">
                 <CircleSlash />
                 Unresolved
               </Button>

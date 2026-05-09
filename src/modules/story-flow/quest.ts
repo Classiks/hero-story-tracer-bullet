@@ -2,11 +2,12 @@ import {
   Quest,
   RecommendedTask,
   type IRecommendedTask,
+  type IQuestProposal,
   type IStoryBlueprint,
 } from '#/modules/ai/schemas/metaphors'
 import { useQuery } from '@tanstack/react-query'
 
-export function useRecommendedTaskQuery({
+export function useQuestProposalQuery({
   challenge,
   enabled,
   goal,
@@ -21,13 +22,13 @@ export function useRecommendedTaskQuery({
 }) {
   return useQuery({
     enabled,
-    queryKey: ['recommended-task', name, goal, challenge, storyBlueprint?.title],
-    queryFn: async () => {
+    queryKey: ['quest-proposal', name, goal, challenge, storyBlueprint?.title],
+    queryFn: async (): Promise<IQuestProposal> => {
       if (!storyBlueprint) {
         throw new Error('Story blueprint is required')
       }
 
-      const response = await fetch('/api/generate/data', {
+      const taskResponse = await fetch('/api/generate/data', {
         method: 'POST',
         body: JSON.stringify({
           message: createRecommendedTaskPrompt({ challenge, goal, name, storyBlueprint }),
@@ -35,61 +36,32 @@ export function useRecommendedTaskQuery({
         }),
       })
 
-      if (!response.ok) {
+      if (!taskResponse.ok) {
         throw new Error('Failed to generate recommended task')
       }
 
-      return RecommendedTask.parse(await response.json())
-    },
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    placeholderData: (previousData) => previousData,
-    retry: false,
-    staleTime: Infinity,
-  })
-}
+      const recommendedTask = RecommendedTask.parse(await taskResponse.json())
 
-export function useQuestQuery({
-  challenge,
-  enabled,
-  goal,
-  name,
-  storyBlueprint,
-  task,
-  taskGeneratedAt,
-}: {
-  challenge: string
-  enabled: boolean
-  goal: string
-  name: string
-  storyBlueprint: IStoryBlueprint | undefined
-  task: IRecommendedTask | undefined
-  taskGeneratedAt: number
-}) {
-  return useQuery({
-    enabled,
-    queryKey: ['quest', name, goal, challenge, storyBlueprint?.title, task?.task, taskGeneratedAt],
-    queryFn: async () => {
-      if (!storyBlueprint || !task) {
-        throw new Error('Story blueprint and task are required')
-      }
-
-      const response = await fetch('/api/generate/data', {
+      const questResponse = await fetch('/api/generate/data', {
         method: 'POST',
         body: JSON.stringify({
-          message: createQuestPrompt({ challenge, goal, name, storyBlueprint, task }),
+          message: createQuestPrompt({ challenge, goal, name, storyBlueprint, task: recommendedTask }),
           schemaId: 'quest',
         }),
       })
 
-      if (!response.ok) {
+      if (!questResponse.ok) {
         throw new Error('Failed to generate quest')
       }
 
-      return Quest.parse(await response.json())
+      return {
+        recommendedTask,
+        quest: Quest.parse(await questResponse.json()),
+      }
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
     retry: false,
     staleTime: Infinity,
   })

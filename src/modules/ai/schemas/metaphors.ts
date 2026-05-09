@@ -29,6 +29,11 @@ export const Quest = z.object({
   metaphors: MetaphorList,
 }).describe("A user-facing motivational quest generated from a recommended real-world task.")
 
+export const QuestProposal = z.object({
+  recommendedTask: RecommendedTask,
+  quest: Quest,
+}).describe("A complete quest proposal containing the hidden practical recommendation and visible story quest.")
+
 export const QuestResultText = z.object({
   title: z.string().describe("A short in-world title for the story beat that follows a quest attempt."),
   text: z.string().describe("A compact in-world story bite showing what changed after the quest attempt."),
@@ -40,4 +45,5 @@ export type IMetaphors = z.infer<typeof Metaphors>
 export type IStoryBlueprint = z.infer<typeof StoryBlueprint>
 export type IRecommendedTask = z.infer<typeof RecommendedTask>
 export type IQuest = z.infer<typeof Quest>
+export type IQuestProposal = z.infer<typeof QuestProposal>
 export type IQuestResultText = z.infer<typeof QuestResultText>

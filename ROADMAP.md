@@ -256,6 +256,18 @@ shift is that screens load records by durable IDs.
 Goal: simplify the current app model before persistence makes it harder to
 change.
 
+Status: done.
+
+What changed:
+
+- Added a `QuestProposal` aggregate so the hidden recommended task and visible
+  quest move through the app as one unit.
+- Replaced separate task and quest query lifecycles with one proposal query that
+  still keeps the internal two-step AI generation.
+- Removed independent task-only regeneration from the UI.
+- Introduced lightweight outcome and feedback types for future persistence:
+  `completed`, `unresolved`, `rejected`, plus an optional feedback note.
+
 Work:
 
 - Treat the hidden recommended task and visible quest as one quest proposal.

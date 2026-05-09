@@ -1,32 +1,32 @@
 import {
   QuestResultText,
-  type IQuest,
   type IQuestResultText,
-  type IRecommendedTask,
+  type IQuestProposal,
   type IStoryBlueprint,
 } from '#/modules/ai/schemas/metaphors'
+import { questOutcomeSucceeded, type QuestFeedback, type QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
 import { useQuery } from '@tanstack/react-query'
 
 export function useQuestResultTextQuery({
   challenge,
   enabled,
+  feedback,
   goal,
   name,
-  note,
+  outcomeStatus,
   quest,
   storyBlueprint,
-  success,
   task,
 }: {
   challenge: string
   enabled: boolean
+  feedback: QuestFeedback
   goal: string
   name: string
-  note: string
-  quest: IQuest | undefined
+  outcomeStatus: QuestOutcomeStatus
+  quest: IQuestProposal['quest'] | undefined
   storyBlueprint: IStoryBlueprint | undefined
-  success: boolean
-  task: IRecommendedTask | undefined
+  task: IQuestProposal['recommendedTask'] | undefined
 }) {
   return useQuery({
     enabled,
@@ -38,8 +38,8 @@ export function useQuestResultTextQuery({
       storyBlueprint?.title,
       task?.task,
       quest?.quest,
-      success,
-      note,
+      outcomeStatus,
+      feedback.note,
     ],
     queryFn: async () => {
       if (!storyBlueprint || !task || !quest) {
@@ -51,12 +51,12 @@ export function useQuestResultTextQuery({
         body: JSON.stringify({
           message: createQuestResultTextPrompt({
             challenge,
+            feedback,
             goal,
             name,
-            note,
+            outcomeStatus,
             quest,
             storyBlueprint,
-            success,
             task,
           }),
           schemaId: 'questResultText',
@@ -78,16 +78,16 @@ export function useQuestResultTextQuery({
 
 export function useQuestResultImageQuery({
   enabled,
+  outcomeStatus,
   quest,
   resultText,
   storyBlueprint,
-  success,
 }: {
   enabled: boolean
-  quest: IQuest | undefined
+  outcomeStatus: QuestOutcomeStatus
+  quest: IQuestProposal['quest'] | undefined
   resultText: IQuestResultText | undefined
   storyBlueprint: IStoryBlueprint | undefined
-  success: boolean
 }) {
   return useQuery({
     enabled,
@@ -97,7 +97,7 @@ export function useQuestResultImageQuery({
       quest?.quest,
       resultText?.title,
       resultText?.text,
-      success,
+      outcomeStatus,
     ],
     queryFn: async () => {
       if (!storyBlueprint || !quest || !resultText) {
@@ -107,7 +107,7 @@ export function useQuestResultImageQuery({
       const response = await fetch('/api/generate/image', {
         method: 'POST',
         body: JSON.stringify({
-          message: createQuestResultImagePrompt({ quest, resultText, storyBlueprint, success }),
+          message: createQuestResultImagePrompt({ outcomeStatus, quest, resultText, storyBlueprint }),
         }),
       })
 
@@ -127,25 +127,25 @@ export function useQuestResultImageQuery({
 
 export function createQuestResultTextPrompt({
   challenge,
+  feedback,
   goal,
   name,
-  note,
+  outcomeStatus,
   quest,
   storyBlueprint,
-  success,
   task,
 }: {
   challenge: string
+  feedback: QuestFeedback
   goal: string
   name: string
-  note: string
-  quest: IQuest
+  outcomeStatus: QuestOutcomeStatus
+  quest: IQuestProposal['quest']
   storyBlueprint: IStoryBlueprint
-  success: boolean
-  task: IRecommendedTask
+  task: IQuestProposal['recommendedTask']
 }) {
-  const outcome = success ? 'completed' : 'abandoned or failed'
-  const userNote = note || 'No extra feedback was provided.'
+  const outcome = getOutcomePromptLabel(outcomeStatus)
+  const userNote = feedback.note || 'No extra feedback was provided.'
 
   return `
 Write the next short story beat after a user attempted a quest.
@@ -195,17 +195,17 @@ Rules:
 }
 
 export function createQuestResultImagePrompt({
+  outcomeStatus,
   quest,
   resultText,
   storyBlueprint,
-  success,
 }: {
-  quest: IQuest
+  outcomeStatus: QuestOutcomeStatus
+  quest: IQuestProposal['quest']
   resultText: IQuestResultText
   storyBlueprint: IStoryBlueprint
-  success: boolean
 }) {
-  const outcomeDirection = success
+  const outcomeDirection = questOutcomeSucceeded(outcomeStatus)
     ? 'Show a small visible victory, changed landscape, rekindled light, or progress after action.'
     : 'Show tension, retreat, an unresolved obstacle, or a dim but surviving light; avoid bleak final defeat.'
 
@@ -224,7 +224,7 @@ Result beat metaphors:
 ${resultText.metaphors
   .map((metaphor) => `- ${metaphor.real} -> ${metaphor.metaphor}`)
   .join('\n')}
-Outcome: ${success ? 'completed' : 'abandoned or failed'}
+Outcome: ${getOutcomePromptLabel(outcomeStatus)}
 
 Composition:
 - Wide banner framing, readable on a phone.
@@ -239,4 +239,15 @@ Composition:
 - No text, no captions, no UI, no menus, no buttons, no icons, no health bars, no
   mana bars, no stats, no inventory, no minimap, no game HUD.
 `
+}
+
+function getOutcomePromptLabel(outcomeStatus: QuestOutcomeStatus) {
+  switch (outcomeStatus) {
+    case 'completed':
+      return 'completed'
+    case 'rejected':
+      return 'rejected'
+    case 'unresolved':
+      return 'abandoned or failed'
+  }
 }
