@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as StoryFlowIndexRouteImport } from './routes/story-flow/index'
+import { Route as TestTodoRouteImport } from './routes/test/todo'
 import { Route as StoryFlowonboardingProblemRouteImport } from './routes/story-flow/(onboarding)/problem'
 import { Route as StoryFlowonboardingNameRouteImport } from './routes/story-flow/(onboarding)/name'
 import { Route as StoryFlowonboardingGoalRouteImport } from './routes/story-flow/(onboarding)/goal'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const StoryFlowIndexRoute = StoryFlowIndexRouteImport.update({
   id: '/story-flow/',
   path: '/story-flow/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestTodoRoute = TestTodoRouteImport.update({
+  id: '/test/todo',
+  path: '/test/todo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StoryFlowonboardingProblemRoute =
@@ -84,6 +90,7 @@ const StoryFlowloopQuestFeedbackRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/test/todo': typeof TestTodoRoute
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/test/todo': typeof TestTodoRoute
   '/story-flow': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
@@ -111,6 +119,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/test/todo': typeof TestTodoRoute
   '/story-flow/': typeof StoryFlowIndexRoute
   '/api/generate/data': typeof ApiGenerateDataRoute
   '/api/generate/image': typeof ApiGenerateImageRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/test/todo'
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/test/todo'
     | '/story-flow'
     | '/api/generate/data'
     | '/api/generate/image'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/test/todo'
     | '/story-flow/'
     | '/api/generate/data'
     | '/api/generate/image'
@@ -166,6 +178,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  TestTodoRoute: typeof TestTodoRoute
   StoryFlowIndexRoute: typeof StoryFlowIndexRoute
   ApiGenerateDataRoute: typeof ApiGenerateDataRoute
   ApiGenerateImageRoute: typeof ApiGenerateImageRoute
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/story-flow'
       fullPath: '/story-flow/'
       preLoaderRoute: typeof StoryFlowIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test/todo': {
+      id: '/test/todo'
+      path: '/test/todo'
+      fullPath: '/test/todo'
+      preLoaderRoute: typeof TestTodoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/story-flow/(onboarding)/problem': {
@@ -262,6 +282,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  TestTodoRoute: TestTodoRoute,
   StoryFlowIndexRoute: StoryFlowIndexRoute,
   ApiGenerateDataRoute: ApiGenerateDataRoute,
   ApiGenerateImageRoute: ApiGenerateImageRoute,
