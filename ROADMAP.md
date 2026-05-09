@@ -111,7 +111,6 @@ Conceptual fields:
 - `blueprint_generated_at`
 - `story_image_path`
 - `story_image_url`
-- `current_quest_id`
 - `created_at`
 - `updated_at`
 
@@ -293,6 +292,20 @@ Acceptance criteria:
 
 Goal: add the durable foundation without changing the visible story flow yet.
 
+Status: done.
+
+What changed:
+
+- Added the Phase 1 Supabase schema script for stories, quests, generated asset
+  metadata, storage bucket setup, timestamps, indexes, and RLS policies.
+- Added typed Supabase database definitions and switched the browser client to
+  use them.
+- Added anonymous auth bootstrap in the root shell so browser sessions get a
+  Supabase user without changing the visible flow.
+- Added reusable client and server helpers for authenticated requests and
+  request-scoped Supabase server clients.
+- Kept the schema free of `current_quest_id` and single-active-quest constraints.
+
 Work:
 
 - Add Supabase schema for stories, quests, and generated assets.
@@ -378,7 +391,8 @@ Work:
 - Add "next quest" behavior that uses persisted quest history.
 - Add a current progress view for the active story.
 - Show recent quest outcomes and current active quest status.
-- Add guardrails so only one active accepted quest exists per story.
+- Decide whether the product should allow one or multiple accepted/open quests
+  per story before adding any active-quest constraints.
 - Make rejected or regenerated proposals visible enough for debugging, even if
   not prominent in the UI.
 

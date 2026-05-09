@@ -13,6 +13,7 @@ import appCss from '../styles.css?url'
 
 import type { QueryClient } from '@tanstack/react-query'
 import { TooltipProvider } from '#/components/ui/tooltip'
+import { SupabaseAuthBootstrap } from '#/components/supabase-auth-bootstrap'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -52,6 +53,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <TooltipProvider>
+          <SupabaseAuthBootstrap />
           {children}
         </TooltipProvider>
         <TanStackDevtools
