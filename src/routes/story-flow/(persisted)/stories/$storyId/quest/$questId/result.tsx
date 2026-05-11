@@ -13,6 +13,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Award, CircleSlash, Flame, ScrollText, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
+import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/index'
 import { Route as NextRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/proposal'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/quest/$questId/result')({
@@ -111,6 +112,20 @@ function RouteComponent() {
             >
               Onto the next quest
               <ArrowRight />
+            </Button>
+
+            <Button
+              className="mt-3 w-full"
+              onClick={() =>
+                navigate({
+                  params: { storyId },
+                  to: StoryHubRoute.to,
+                })
+              }
+              size="hero"
+              variant="outline"
+            >
+              Story progress
             </Button>
           </motion.div>
         )}

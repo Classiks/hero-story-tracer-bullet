@@ -25,6 +25,7 @@ import { Route as ApiStoriesStoryIdSessionRouteImport } from './routes/api/stori
 import { Route as ApiStoriesStoryIdQuestsRouteImport } from './routes/api/stories/$storyId/quests'
 import { Route as ApiQuestsQuestIdCompleteRouteImport } from './routes/api/quests/$questId/complete'
 import { Route as ApiQuestsQuestIdAcceptRouteImport } from './routes/api/quests/$questId/accept'
+import { Route as StoryFlowpersistedStoriesStoryIdIndexRouteImport } from './routes/story-flow/(persisted)/stories/$storyId/index'
 import { Route as StoryFlowpersistedStoriesStoryIdBlurbRouteImport } from './routes/story-flow/(persisted)/stories/$storyId/blurb'
 import { Route as StoryFlowpersistedStoriesStoryIdQuestProposalRouteImport } from './routes/story-flow/(persisted)/stories/$storyId/quest/proposal'
 import { Route as StoryFlowpersistedStoriesStoryIdQuestQuestIdResultRouteImport } from './routes/story-flow/(persisted)/stories/$storyId/quest/$questId/result'
@@ -114,6 +115,12 @@ const ApiQuestsQuestIdAcceptRoute = ApiQuestsQuestIdAcceptRouteImport.update({
   path: '/accept',
   getParentRoute: () => ApiQuestsQuestIdRoute,
 } as any)
+const StoryFlowpersistedStoriesStoryIdIndexRoute =
+  StoryFlowpersistedStoriesStoryIdIndexRouteImport.update({
+    id: '/story-flow/(persisted)/stories/$storyId/',
+    path: '/story-flow/stories/$storyId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const StoryFlowpersistedStoriesStoryIdBlurbRoute =
   StoryFlowpersistedStoriesStoryIdBlurbRouteImport.update({
     id: '/story-flow/(persisted)/stories/$storyId/blurb',
@@ -157,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/api/stories/$storyId/quests': typeof ApiStoriesStoryIdQuestsRoute
   '/api/stories/$storyId/session': typeof ApiStoriesStoryIdSessionRoute
   '/story-flow/stories/$storyId/blurb': typeof StoryFlowpersistedStoriesStoryIdBlurbRoute
+  '/story-flow/stories/$storyId/': typeof StoryFlowpersistedStoriesStoryIdIndexRoute
   '/story-flow/stories/$storyId/quest/proposal': typeof StoryFlowpersistedStoriesStoryIdQuestProposalRoute
   '/story-flow/stories/$storyId/quest/$questId/feedback': typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdFeedbackRoute
   '/story-flow/stories/$storyId/quest/$questId/result': typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdResultRoute
@@ -179,6 +187,7 @@ export interface FileRoutesByTo {
   '/api/stories/$storyId/quests': typeof ApiStoriesStoryIdQuestsRoute
   '/api/stories/$storyId/session': typeof ApiStoriesStoryIdSessionRoute
   '/story-flow/stories/$storyId/blurb': typeof StoryFlowpersistedStoriesStoryIdBlurbRoute
+  '/story-flow/stories/$storyId': typeof StoryFlowpersistedStoriesStoryIdIndexRoute
   '/story-flow/stories/$storyId/quest/proposal': typeof StoryFlowpersistedStoriesStoryIdQuestProposalRoute
   '/story-flow/stories/$storyId/quest/$questId/feedback': typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdFeedbackRoute
   '/story-flow/stories/$storyId/quest/$questId/result': typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdResultRoute
@@ -202,6 +211,7 @@ export interface FileRoutesById {
   '/api/stories/$storyId/quests': typeof ApiStoriesStoryIdQuestsRoute
   '/api/stories/$storyId/session': typeof ApiStoriesStoryIdSessionRoute
   '/story-flow/(persisted)/stories/$storyId/blurb': typeof StoryFlowpersistedStoriesStoryIdBlurbRoute
+  '/story-flow/(persisted)/stories/$storyId/': typeof StoryFlowpersistedStoriesStoryIdIndexRoute
   '/story-flow/(persisted)/stories/$storyId/quest/proposal': typeof StoryFlowpersistedStoriesStoryIdQuestProposalRoute
   '/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback': typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdFeedbackRoute
   '/story-flow/(persisted)/stories/$storyId/quest/$questId/result': typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdResultRoute
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/api/stories/$storyId/quests'
     | '/api/stories/$storyId/session'
     | '/story-flow/stories/$storyId/blurb'
+    | '/story-flow/stories/$storyId/'
     | '/story-flow/stories/$storyId/quest/proposal'
     | '/story-flow/stories/$storyId/quest/$questId/feedback'
     | '/story-flow/stories/$storyId/quest/$questId/result'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/api/stories/$storyId/quests'
     | '/api/stories/$storyId/session'
     | '/story-flow/stories/$storyId/blurb'
+    | '/story-flow/stories/$storyId'
     | '/story-flow/stories/$storyId/quest/proposal'
     | '/story-flow/stories/$storyId/quest/$questId/feedback'
     | '/story-flow/stories/$storyId/quest/$questId/result'
@@ -270,6 +282,7 @@ export interface FileRouteTypes {
     | '/api/stories/$storyId/quests'
     | '/api/stories/$storyId/session'
     | '/story-flow/(persisted)/stories/$storyId/blurb'
+    | '/story-flow/(persisted)/stories/$storyId/'
     | '/story-flow/(persisted)/stories/$storyId/quest/proposal'
     | '/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback'
     | '/story-flow/(persisted)/stories/$storyId/quest/$questId/result'
@@ -288,6 +301,7 @@ export interface RootRouteChildren {
   StoryFlowonboardingNameRoute: typeof StoryFlowonboardingNameRoute
   StoryFlowonboardingProblemRoute: typeof StoryFlowonboardingProblemRoute
   StoryFlowpersistedStoriesStoryIdBlurbRoute: typeof StoryFlowpersistedStoriesStoryIdBlurbRoute
+  StoryFlowpersistedStoriesStoryIdIndexRoute: typeof StoryFlowpersistedStoriesStoryIdIndexRoute
   StoryFlowpersistedStoriesStoryIdQuestProposalRoute: typeof StoryFlowpersistedStoriesStoryIdQuestProposalRoute
   StoryFlowpersistedStoriesStoryIdQuestQuestIdFeedbackRoute: typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdFeedbackRoute
   StoryFlowpersistedStoriesStoryIdQuestQuestIdResultRoute: typeof StoryFlowpersistedStoriesStoryIdQuestQuestIdResultRoute
@@ -407,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiQuestsQuestIdAcceptRouteImport
       parentRoute: typeof ApiQuestsQuestIdRoute
     }
+    '/story-flow/(persisted)/stories/$storyId/': {
+      id: '/story-flow/(persisted)/stories/$storyId/'
+      path: '/story-flow/stories/$storyId'
+      fullPath: '/story-flow/stories/$storyId/'
+      preLoaderRoute: typeof StoryFlowpersistedStoriesStoryIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/story-flow/(persisted)/stories/$storyId/blurb': {
       id: '/story-flow/(persisted)/stories/$storyId/blurb'
       path: '/story-flow/stories/$storyId/blurb'
@@ -490,6 +511,8 @@ const rootRouteChildren: RootRouteChildren = {
   StoryFlowonboardingProblemRoute: StoryFlowonboardingProblemRoute,
   StoryFlowpersistedStoriesStoryIdBlurbRoute:
     StoryFlowpersistedStoriesStoryIdBlurbRoute,
+  StoryFlowpersistedStoriesStoryIdIndexRoute:
+    StoryFlowpersistedStoriesStoryIdIndexRoute,
   StoryFlowpersistedStoriesStoryIdQuestProposalRoute:
     StoryFlowpersistedStoriesStoryIdQuestProposalRoute,
   StoryFlowpersistedStoriesStoryIdQuestQuestIdFeedbackRoute:

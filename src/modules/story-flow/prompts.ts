@@ -69,11 +69,13 @@ export function createRecommendedTaskPrompt({
   challenge,
   goal,
   name,
+  recentQuestHistory,
   storyBlueprint,
 }: {
   challenge: string
   goal: string
   name: string
+  recentQuestHistory?: string
   storyBlueprint: IStoryBlueprint
 }) {
   return `
@@ -94,6 +96,9 @@ Story context:
 - Challenge metaphor: ${storyBlueprint.metaphors.enemy}
 - Reward: ${storyBlueprint.metaphors.reward}
 
+Recent quest history:
+${recentQuestHistory || '- No prior quests yet.'}
+
 Rules:
 - Choose exactly one next step the user can take soon.
 - Make it small enough to start without planning a whole project.
@@ -101,6 +106,10 @@ Rules:
 - The task must include all needed details; never output a sentence fragment.
 - The task must move the user toward the goal and account for the challenge.
 - Do not invent personal history beyond the provided inputs.
+- Avoid repeating a recent completed or unresolved quest unless the history makes
+  a direct retry clearly useful.
+- Use the history to keep continuity, but prioritize the user's current goal and
+  challenge over elaborate plot callbacks.
 - Reasoning should be concise and practical.
 - Avoid vague branded ritual names unless they make the action clearer.
 `
@@ -110,12 +119,14 @@ export function createQuestPrompt({
   challenge,
   goal,
   name,
+  recentQuestHistory,
   storyBlueprint,
   task,
 }: {
   challenge: string
   goal: string
   name: string
+  recentQuestHistory?: string
   storyBlueprint: IStoryBlueprint
   task: IRecommendedTask
 }) {
@@ -147,6 +158,9 @@ Hidden recommended task:
 - Task: ${task.task}
 - Reasoning: ${task.reasoning}
 
+Recent quest history:
+${recentQuestHistory || '- No prior quests yet.'}
+
 Rules:
 - quest: short in-world quest title. Do not use literal productivity terms.
 - content: 3-5 sentences of immersive in-world quest text.
@@ -156,6 +170,8 @@ Rules:
 - metaphors: list the important real-world concepts and their story-world translations for the explanation dialog.
 - The first metaphors item must map the complete real-world recommended task to the generated in-world action.
 - Keep the story aligned with the base blurb; do not create a different world.
+- Let recent history influence continuity and avoid repeating the same quest
+  framing, but do not recap the whole history.
 - The quest can vary its phrasing and metaphors even when the task stays the same.
 - The metaphor must sharpen the real task, not hide it behind vague fantasy.
 - Keep concrete real-world details out of quest, content, and action unless those exact words already belong to the story world.

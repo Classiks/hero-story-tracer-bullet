@@ -34,6 +34,16 @@ export type PersistedQuest = {
   completedAt: string | null
 }
 
+export type QuestStatus = PersistedQuest['status']
+
+export type StoryProgress = {
+  counts: Record<QuestStatus, number>
+  currentQuest: PersistedQuest | null
+  latestQuestStatus: QuestStatus | null
+  nextAction: 'start_first_quest' | 'review_proposal' | 'finish_accepted_quest' | 'get_next_quest'
+  totalQuests: number
+}
+
 export type StoryResponse = {
   story: PersistedStory
 }
@@ -48,6 +58,7 @@ export type QuestResponse = {
 
 export type StorySessionResponse = {
   latestQuest: PersistedQuest | null
+  progress: StoryProgress
   recentQuests: PersistedQuest[]
   story: PersistedStory
 }

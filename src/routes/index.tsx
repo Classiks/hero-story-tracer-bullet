@@ -1,17 +1,17 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
-import { Route as StartingRoute } from '#/routes/story-flow/(onboarding)/name';
+import { Route as StoryFlowRoute } from '#/routes/story-flow/index'
 
 export const Route = createFileRoute('/')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const navigate = useNavigate()
+  const navigate = Route.useNavigate()
 
   useEffect(() => {
-    navigate({ to: StartingRoute.to })
-  }, [])
+    void navigate({ replace: true, to: StoryFlowRoute.to })
+  }, [navigate])
 
-  return <div>Hello "/story-flow/"!</div>
+  return null
 }

@@ -431,6 +431,23 @@ Acceptance criteria:
 
 Goal: let the user repeatedly complete quests and receive new ones.
 
+Status: done.
+
+What changed:
+
+- Added a persisted story hub at `/story-flow/stories/:storyId` as the durable
+  progress and resume screen.
+- `/story-flow/` now resumes the newest active story when one exists, otherwise
+  it starts onboarding.
+- Story sessions now include derived progress: current quest, latest quest
+  status, next action, and quest counts.
+- The story hub shows the current next action and recent quest history from
+  persisted quest rows.
+- Story blurb now continues to the story hub, and the result screen can return
+  to story progress as well as continue to the next quest.
+- Quest generation now receives a compact recent quest history summary so new
+  quests can avoid repetition and keep story continuity.
+
 Work:
 
 - Add "next quest" behavior that uses persisted quest history.

@@ -22,7 +22,12 @@ import {
   createStoryImagePrompt,
 } from '#/modules/story-flow/prompts'
 import type { QuestFeedback, QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
-import type { PersistedQuest, PersistedStory } from '#/modules/story-flow/persisted-types'
+import type {
+  PersistedQuest,
+  PersistedStory,
+  QuestStatus,
+  StoryProgress,
+} from '#/modules/story-flow/persisted-types'
 
 const GENERATED_ASSETS_BUCKET = 'generated-assets'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
@@ -158,18 +163,19 @@ export async function getStorySession({
     .select()
     .eq('story_id', storyId)
     .order('sequence_number', { ascending: false })
-    .limit(10)
 
   if (error) {
     throw new StoryServiceError(error.message)
   }
 
-  const recentQuests = await Promise.all(
+  const allQuests = await Promise.all(
     (questRows ?? []).map((row) => toQuestResponse({ row, supabase })),
   )
+  const recentQuests = allQuests.slice(0, 10)
 
   return {
-    latestQuest: recentQuests[0] ?? null,
+    latestQuest: allQuests[0] ?? null,
+    progress: getStoryProgress(allQuests),
     recentQuests,
     story,
   }
@@ -206,8 +212,10 @@ export async function createPersistedQuest({
   }
 
   const sequenceNumber = (latestQuestRow?.sequence_number ?? 0) + 1
-  const recommendedTask = await generateRecommendedTask(story)
-  const quest = await generateQuest({ recommendedTask, story })
+  const recentQuestRows = await getRecentQuestRows({ storyId, supabase })
+  const recentQuestHistory = formatRecentQuestHistory(recentQuestRows)
+  const recommendedTask = await generateRecommendedTask({ recentQuestHistory, story })
+  const quest = await generateQuest({ recentQuestHistory, recommendedTask, story })
 
   const { data: questRow, error: insertQuestError } = await supabase
     .from('quests')
@@ -402,7 +410,13 @@ async function generateStoryImage(blueprint: IStoryBlueprint) {
   return image.b64Json
 }
 
-async function generateRecommendedTask(story: PersistedStory) {
+async function generateRecommendedTask({
+  recentQuestHistory,
+  story,
+}: {
+  recentQuestHistory: string
+  story: PersistedStory
+}) {
   if (shouldMock('recommendedTask')) {
     return readMockData(RecommendedTask, 'recommendedTask')
   }
@@ -412,6 +426,7 @@ async function generateRecommendedTask(story: PersistedStory) {
       challenge: story.challenge,
       goal: story.goal,
       name: story.name,
+      recentQuestHistory,
       storyBlueprint: story.blueprint,
     }),
     RecommendedTask,
@@ -420,9 +435,11 @@ async function generateRecommendedTask(story: PersistedStory) {
 
 async function generateQuest({
   recommendedTask,
+  recentQuestHistory,
   story,
 }: {
   recommendedTask: IRecommendedTask
+  recentQuestHistory: string
   story: PersistedStory
 }) {
   if (shouldMock('quest')) {
@@ -434,6 +451,7 @@ async function generateQuest({
       challenge: story.challenge,
       goal: story.goal,
       name: story.name,
+      recentQuestHistory,
       storyBlueprint: story.blueprint,
       task: recommendedTask,
     }),
@@ -639,6 +657,107 @@ function parseFeedback(value: Json): QuestFeedback {
   return typeof value === 'object' && value && !Array.isArray(value)
     ? { note: typeof value.note === 'string' ? value.note : undefined }
     : {}
+}
+
+async function getRecentQuestRows({
+  storyId,
+  supabase,
+}: {
+  storyId: string
+  supabase: ServerSupabase
+}) {
+  const { data, error } = await supabase
+    .from('quests')
+    .select()
+    .eq('story_id', storyId)
+    .order('sequence_number', { ascending: false })
+    .limit(6)
+
+  if (error) {
+    throw new StoryServiceError(error.message)
+  }
+
+  return data ?? []
+}
+
+function getStoryProgress(recentQuests: PersistedQuest[]): StoryProgress {
+  const counts: StoryProgress['counts'] = {
+    accepted: 0,
+    completed: 0,
+    proposed: 0,
+    rejected: 0,
+    unresolved: 0,
+  }
+
+  for (const quest of recentQuests) {
+    counts[quest.status] += 1
+  }
+
+  const latestQuest = recentQuests[0] ?? null
+  const currentQuest =
+    latestQuest && (latestQuest.status === 'proposed' || latestQuest.status === 'accepted')
+      ? latestQuest
+      : null
+  const nextAction = getNextAction(latestQuest)
+
+  return {
+    counts,
+    currentQuest,
+    latestQuestStatus: latestQuest?.status ?? null,
+    nextAction,
+    totalQuests: recentQuests.length,
+  }
+}
+
+function getNextAction(latestQuest: PersistedQuest | null): StoryProgress['nextAction'] {
+  if (!latestQuest) {
+    return 'start_first_quest'
+  }
+
+  if (latestQuest.status === 'proposed') {
+    return 'review_proposal'
+  }
+
+  if (latestQuest.status === 'accepted') {
+    return 'finish_accepted_quest'
+  }
+
+  return 'get_next_quest'
+}
+
+function formatRecentQuestHistory(
+  rows: Array<{
+    feedback: Json
+    outcome_status: QuestOutcomeStatus | null
+    quest: Json | null
+    recommended_task: Json | null
+    result_text: Json | null
+    sequence_number: number
+    status: QuestStatus
+  }>,
+) {
+  if (!rows.length) {
+    return '- No prior quests yet.'
+  }
+
+  return rows
+    .map((row) => {
+      const quest = row.quest ? Quest.safeParse(row.quest).data : null
+      const task = row.recommended_task ? RecommendedTask.safeParse(row.recommended_task).data : null
+      const result = row.result_text ? QuestResultText.safeParse(row.result_text).data : null
+      const feedback = parseFeedback(row.feedback)
+      const parts = [
+        `#${row.sequence_number}`,
+        `status: ${row.status}`,
+        quest ? `quest: ${quest.quest}` : null,
+        task ? `task: ${task.task}` : null,
+        result ? `result: ${result.title}` : null,
+        feedback.note ? `feedback: ${feedback.note}` : null,
+      ].filter(Boolean)
+
+      return `- ${parts.join('; ')}`
+    })
+    .join('\n')
 }
 
 function base64ToUint8Array(base64: string) {
