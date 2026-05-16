@@ -27,10 +27,12 @@ import type {
   PersistedStory,
   QuestStatus,
   StoryProgress,
+  StoryStatus,
 } from '#/modules/story-flow/persisted-types'
 
 const GENERATED_ASSETS_BUCKET = 'generated-assets'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+const ACTIVE_STORY_STATUS: StoryStatus = 'active'
 
 type ServerSupabase = ReturnType<typeof createServerSupabaseClient>
 
@@ -61,7 +63,7 @@ export async function createPersistedStory({
   const imageBase64 = await generateStoryImage(blueprint)
   const storyImagePath = `${userId}/stories/${storyId}/banner.png`
 
-  const { data: storyRow, error: insertStoryError } = await supabase
+  const { error: insertStoryError } = await supabase
     .from('stories')
     .insert({
       id: storyId,
@@ -150,6 +152,77 @@ export async function listPersistedStories({ supabase }: { supabase: ServerSupab
   return { stories }
 }
 
+export async function updatePersistedStoryStatus({
+  status,
+  storyId,
+  supabase,
+}: {
+  status: StoryStatus
+  storyId: string
+  supabase: ServerSupabase
+}) {
+  const { data: row, error } = await supabase
+    .from('stories')
+    .update({ status })
+    .eq('id', storyId)
+    .select()
+    .single()
+
+  if (error) {
+    throw new StoryServiceError(error.message, error.code === 'PGRST116' ? 404 : 500)
+  }
+
+  return toStoryResponse({ row, supabase })
+}
+
+export async function deletePersistedStory({
+  storyId,
+  supabase,
+}: {
+  storyId: string
+  supabase: ServerSupabase
+}) {
+  const { data: storyRow, error: storyError } = await supabase
+    .from('stories')
+    .select('id, story_image_path')
+    .eq('id', storyId)
+    .single()
+
+  if (storyError) {
+    throw new StoryServiceError(storyError.message, storyError.code === 'PGRST116' ? 404 : 500)
+  }
+
+  const { data: questRows, error: questError } = await supabase
+    .from('quests')
+    .select('result_image_path')
+    .eq('story_id', storyId)
+
+  if (questError) {
+    throw new StoryServiceError(questError.message)
+  }
+
+  const storagePaths = [
+    storyRow.story_image_path,
+    ...(questRows ?? []).map((quest) => quest.result_image_path),
+  ].filter((path): path is string => Boolean(path))
+
+  const { error: deleteError } = await supabase.from('stories').delete().eq('id', storyId)
+
+  if (deleteError) {
+    throw new StoryServiceError(deleteError.message)
+  }
+
+  if (storagePaths.length) {
+    const { error: storageError } = await supabase.storage
+      .from(GENERATED_ASSETS_BUCKET)
+      .remove(storagePaths)
+
+    if (storageError) {
+      console.warn('Story storage cleanup failed after deleting story.', storageError)
+    }
+  }
+}
+
 export async function getStorySession({
   storyId,
   supabase,
@@ -204,9 +277,10 @@ export async function createPersistedQuest({
   }
 
   const story = mapStoryRow(storyRow, null)
+  assertStoryCanReceiveQuest(story)
   const { data: latestQuestRow, error: latestQuestError } = await supabase
     .from('quests')
-    .select('sequence_number')
+    .select()
     .eq('story_id', storyId)
     .order('sequence_number', { ascending: false })
     .limit(1)
@@ -214,6 +288,10 @@ export async function createPersistedQuest({
 
   if (latestQuestError) {
     throw new StoryServiceError(latestQuestError.message)
+  }
+
+  if (latestQuestRow?.status === 'proposed' || latestQuestRow?.status === 'accepted') {
+    return toQuestResponse({ row: latestQuestRow, supabase })
   }
 
   const sequenceNumber = (latestQuestRow?.sequence_number ?? 0) + 1
@@ -266,16 +344,30 @@ export async function acceptPersistedQuest({
 }) {
   const { data: row, error } = await supabase
     .from('quests')
-    .update({ accepted_at: new Date().toISOString(), status: 'accepted' })
-    .eq('id', questId)
     .select()
+    .eq('id', questId)
     .single()
 
   if (error) {
     throw new StoryServiceError(error.message, error.code === 'PGRST116' ? 404 : 500)
   }
 
-  return toQuestResponse({ row, supabase })
+  if (row.status !== 'proposed') {
+    throw new StoryServiceError('Only proposed quests can be accepted.', 409)
+  }
+
+  const { data: updatedRow, error: updateError } = await supabase
+    .from('quests')
+    .update({ accepted_at: new Date().toISOString(), status: 'accepted' })
+    .eq('id', questId)
+    .select()
+    .single()
+
+  if (updateError) {
+    throw new StoryServiceError(updateError.message, updateError.code === 'PGRST116' ? 404 : 500)
+  }
+
+  return toQuestResponse({ row: updatedRow, supabase })
 }
 
 export async function completePersistedQuest({
@@ -305,6 +397,10 @@ export async function completePersistedQuest({
     return toQuestResponse({ row: existingQuestRow, supabase })
   }
 
+  if (existingQuestRow.status !== 'accepted') {
+    throw new StoryServiceError('Only accepted quests can be completed.', 409)
+  }
+
   const { data: storyRow, error: storyError } = await supabase
     .from('stories')
     .select()
@@ -316,6 +412,7 @@ export async function completePersistedQuest({
   }
 
   const story = mapStoryRow(storyRow, null)
+  assertStoryCanReceiveQuest(story)
   const recommendedTask = RecommendedTask.parse(existingQuestRow.recommended_task)
   const quest = Quest.parse(existingQuestRow.quest)
   const resultText = await generateQuestResultText({
@@ -390,6 +487,60 @@ export async function completePersistedQuest({
   }
 }
 
+export async function rejectPersistedQuest({
+  feedback,
+  questId,
+  supabase,
+}: {
+  feedback: QuestFeedback
+  questId: string
+  supabase: ServerSupabase
+}) {
+  const { data: row, error } = await supabase
+    .from('quests')
+    .select()
+    .eq('id', questId)
+    .single()
+
+  if (error) {
+    throw new StoryServiceError(error.message, error.code === 'PGRST116' ? 404 : 500)
+  }
+
+  if (row.status !== 'proposed') {
+    throw new StoryServiceError('Only proposed quests can be rejected.', 409)
+  }
+
+  const { data: storyRow, error: storyError } = await supabase
+    .from('stories')
+    .select()
+    .eq('id', row.story_id)
+    .single()
+
+  if (storyError) {
+    throw new StoryServiceError(storyError.message, storyError.code === 'PGRST116' ? 404 : 500)
+  }
+
+  assertStoryCanReceiveQuest(mapStoryRow(storyRow, null))
+
+  const { data: updatedRow, error: updateError } = await supabase
+    .from('quests')
+    .update({
+      completed_at: new Date().toISOString(),
+      feedback: feedback as unknown as Json,
+      outcome_status: 'rejected',
+      status: 'rejected',
+    })
+    .eq('id', questId)
+    .select()
+    .single()
+
+  if (updateError) {
+    throw new StoryServiceError(updateError.message, updateError.code === 'PGRST116' ? 404 : 500)
+  }
+
+  return toQuestResponse({ row: updatedRow, supabase })
+}
+
 async function generateStoryBlueprint({
   challenge,
   goal,
@@ -412,6 +563,9 @@ async function generateStoryImage(blueprint: IStoryBlueprint) {
   }
 
   const image = await generateImage(createStoryImagePrompt(blueprint))
+  if (!image.b64Json) {
+    throw new StoryServiceError('Story image generation did not return image data.')
+  }
   return image.b64Json
 }
 
@@ -519,6 +673,9 @@ async function generateQuestResultImage({
       storyBlueprint: story.blueprint,
     }),
   )
+  if (!image.b64Json) {
+    throw new StoryServiceError('Quest result image generation did not return image data.')
+  }
   return image.b64Json
 }
 
@@ -665,6 +822,12 @@ function parseFeedback(value: Json): QuestFeedback {
   return typeof value === 'object' && value && !Array.isArray(value)
     ? { note: typeof value.note === 'string' ? value.note : undefined }
     : {}
+}
+
+function assertStoryCanReceiveQuest(story: PersistedStory) {
+  if (story.status !== ACTIVE_STORY_STATUS) {
+    throw new StoryServiceError('Only active stories can receive new quest updates.', 409)
+  }
 }
 
 async function getRecentQuestRows({

@@ -2,54 +2,50 @@
 
 ## Purpose
 
-The current prototype proves the core loop: collect a user goal, generate a story
-frame, propose a quest, collect the outcome, and turn that outcome into the next
-story beat.
+The app now supports the durable story loop: collect a user goal, generate a
+story frame, propose a quest, collect the outcome, persist the result, and turn
+that outcome into the next story beat.
 
-The next goal is to make the app viable to iterate on. That means moving from a
-client-only, single-session experience to a durable workflow where users can:
+The next goal is to make the app viable across devices. That means moving from
+anonymous durable sessions to persistent user accounts where users can:
 
 - complete one quest and receive the next one;
 - refresh or return later without losing progress;
 - see current story progress and quest history;
-- eventually manage multiple stories;
-- eventually use real account management across devices.
+- manage multiple stories;
+- complete, archive, restore, or delete stories;
+- reject bad-fit quests with lightweight feedback;
+- use real account management across devices.
 
-This roadmap favors incremental migration. The app should keep the working flow
-intact while persistence, identity, and backend orchestration are introduced one
-piece at a time.
+This roadmap keeps each phase shippable and preserves the working flow while the
+identity model moves from anonymous Supabase users to permanent accounts.
 
 ## Current State
 
-The app is currently a client-orchestrated prototype.
+The app is currently a persisted anonymous-session product.
 
-- Onboarding input lives in the Zustand store in `src/state/onboarding.ts`.
-- Story, quest, and result generation are triggered by React Query hooks in the
-  frontend.
-- The frontend calls generic backend routes:
-  - `/api/generate/data`
-  - `/api/generate/image`
-- Those backend routes call the AI provider and return generated data, but they
-  do not write durable application state.
-- Supabase exists as a basic client integration and test route, but it is not yet
-  the source of truth for the story flow.
-- Query keys are based on prompt inputs such as name, goal, challenge, task, and
-  result text instead of durable story or quest IDs.
-- The hidden recommended task and the visible quest can currently be regenerated
-  independently, which is more workflow surface than the product needs.
+- Onboarding drafts live in the Zustand store in `src/state/onboarding.ts`.
+- Stories, quests, quest outcomes, feedback, and generated image paths are stored
+  in Supabase.
+- Supabase anonymous auth owns row separation through RLS.
+- Story and quest screens load by durable `storyId` and `questId`.
+- `/story-flow` is a landing page where users can start, continue, review, and
+  organize multiple stories.
+- The story hub shows a comic-style "Story so far" overview from completed and
+  unresolved quest beats.
+- Generated images are uploaded to Supabase Storage and reloaded through signed
+  URLs.
 
-This is good for proving the experience, but it creates problems as soon as the
-app needs real iteration:
+The remaining product foundation before accounts is lifecycle polish:
 
-- progress disappears on refresh or browser changes;
-- completed quest results are not stored;
-- the app cannot reliably know which quest is active;
-- regenerating and completing quests can drift from what the user actually saw;
-- multiple stories and user separation have no stable foundation.
+- completed and archived stories should be read-only unless restored;
+- deleted stories should disappear permanently;
+- rejected quests should be kept with optional feedback and used as generation
+  context.
 
 ## Target Architecture
 
-The target direction is backend-owned workflow state with Supabase as the durable
+The architecture is backend-owned workflow state with Supabase as the durable
 store.
 
 The frontend should remain responsible for presentation, local form drafts, and
@@ -58,8 +54,9 @@ story state, especially when AI generation is involved.
 
 Recommended boundary:
 
-- The frontend sends domain actions: create story, generate quest, accept quest,
-  complete quest, get next quest.
+- The frontend sends domain actions: create story, update story status, delete
+  story, generate quest, accept quest, reject quest, complete quest, get next
+  quest.
 - The backend validates the user, calls AI helpers, writes Supabase rows, stores
   generated images, and returns the resulting domain record.
 - The frontend renders returned records immediately and can also refetch by ID.
@@ -67,8 +64,7 @@ Recommended boundary:
 - Generated images are uploaded to Supabase Storage. Database rows store storage
   paths and display URLs, not raw base64 blobs.
 - The hidden recommended task and visible quest are treated as one quest proposal
-  unit. They may still be produced by two internal AI helper calls, but the UI and
-  persisted workflow regenerate and store them together.
+  unit. Rejected proposals are kept as useful history instead of overwritten.
 
 This keeps generation and persistence from diverging. If the backend returns a
 quest to the frontend, that quest should already exist in durable storage.
@@ -106,7 +102,7 @@ Conceptual fields:
 - `name`
 - `goal`
 - `challenge`
-- `status`: `draft`, `active`, `paused`, `completed`, `archived`
+- `status`: `active`, `completed`, `archived`
 - `blueprint`: generated story blueprint JSON
 - `blueprint_generated_at`
 - `story_image_path`
@@ -114,8 +110,10 @@ Conceptual fields:
 - `created_at`
 - `updated_at`
 
-The first version only needs one active story in the UI, but the schema should
-support many stories per user.
+The schema supports many stories per user. `paused` is intentionally absent:
+choosing not to interact already covers that behavior. `completed` means the
+story is narratively finished; `archived` is list organization and can be
+restored.
 
 ### Quests
 
@@ -132,9 +130,8 @@ Conceptual fields:
 - `accepted_at`
 - `outcome_status`: nullable while proposed or accepted; later set to
   `completed`, `unresolved`, or `rejected`
-- `feedback`: lightweight JSON object for user feedback; initially only an
-  optional note, later extensible to rejection reasons, blockers, difficulty, or
-  structured form answers
+- `feedback`: lightweight JSON object for user feedback; currently an optional
+  note for completed, unresolved, and rejected quests
 - `result_text`: generated result beat JSON
 - `result_image_path`
 - `result_image_url`
@@ -144,7 +141,8 @@ Conceptual fields:
 
 The hidden recommendation and visible quest should be persisted together. Result
 text and result image should be persisted when the user completes or marks the
-quest unresolved.
+quest unresolved. Rejected quests should persist the proposal and optional
+feedback note without generating a story beat image.
 
 Do not create separate feedback tables or quest-version tables in the first
 persistence pass. Keep the first durable model small, but avoid painting the app
@@ -191,6 +189,15 @@ Initial domain operations:
   - action: load one story, current quest, and recent quest history;
   - output: story detail.
 
+- `PATCH /api/stories/:storyId`
+  - input: `active`, `completed`, or `archived`;
+  - action: update story lifecycle status;
+  - output: updated story record.
+
+- `DELETE /api/stories/:storyId`
+  - action: permanently delete the story and cascade owned quest data;
+  - output: empty success response.
+
 - `POST /api/stories/:storyId/quests`
   - action: generate a new quest for the story using stored story context and
     prior quest history;
@@ -206,10 +213,11 @@ Initial domain operations:
     story progress, and make the story ready for the next quest;
   - output: updated quest and story summary.
 
-- `POST /api/quests/:questId/regenerate`
-  - action: regenerate the proposal as a unit by generating a new recommended
-    task and visible quest together;
-  - output: replacement quest proposal.
+- `POST /api/quests/:questId/reject`
+  - input: optional feedback note;
+  - action: mark a proposed quest as rejected so the next proposal can avoid the
+    bad fit;
+  - output: updated quest record.
 
 Keep the lower-level AI helpers internal:
 
@@ -236,7 +244,7 @@ Key changes:
 
 Near-term route direction:
 
-- `/story-flow` loads or redirects to the current active story if one exists.
+- `/story-flow` shows the story landing/library page.
 - `/story-flow/name`, `/goal`, and `/problem` remain draft onboarding steps.
 - `/story-flow/blurb` becomes the story creation result screen after persisted
   story creation.
@@ -271,7 +279,8 @@ Work:
 
 - Treat the hidden recommended task and visible quest as one quest proposal.
 - Remove independent user controls for "regenerate quest only" and "generate a
-  new hidden task only"; expose one regenerate action for the whole proposal.
+  new hidden task only"; expose one "Try another" action that rejects the whole
+  proposal before creating a replacement.
 - Keep the internal two-step AI flow if useful: generate the practical task
   first, then translate it into the visible quest.
 - Refactor frontend hooks and UI state around the proposal unit, not separate
@@ -282,7 +291,7 @@ Work:
 
 Acceptance criteria:
 
-- The user can accept a proposal or regenerate the whole proposal, but cannot
+- The user can accept a proposal or reject the whole proposal, but cannot
   independently regenerate the hidden task and visible quest.
 - A proposal object contains both the hidden recommendation and visible quest.
 - Existing onboarding, quest, feedback, and result screens still work.
@@ -437,12 +446,14 @@ What changed:
 
 - Added a persisted story hub at `/story-flow/stories/:storyId` as the durable
   progress and resume screen.
-- `/story-flow/` now resumes the newest active story when one exists, otherwise
-  it starts onboarding.
+- `/story-flow/` is the story landing page for starting, continuing, and
+  reviewing stories.
 - Story sessions now include derived progress: current quest, latest quest
   status, next action, and quest counts.
 - The story hub shows the current next action and recent quest history from
   persisted quest rows.
+- The story hub now shows a comic-style "Story so far" overview with full-page
+  read-more dialogs for longer story beats.
 - Story blurb now continues to the story hub, and the result screen can return
   to story progress as well as continue to the next quest.
 - Quest generation now receives a compact recent quest history summary so new
@@ -455,8 +466,8 @@ Work:
 - Show recent quest outcomes and current active quest status.
 - Decide whether the product should allow one or multiple accepted/open quests
   per story before adding any active-quest constraints.
-- Make rejected or regenerated proposals visible enough for debugging, even if
-  not prominent in the UI.
+- Keep rejected proposals visible enough for debugging and future quest context,
+  even if not prominent in the UI.
 
 Acceptance criteria:
 
@@ -467,21 +478,39 @@ Acceptance criteria:
 
 ### Phase 6: Prepare Multiple Stories
 
-Goal: support more than one story per user without redesigning persistence.
+Goal: support more than one story per user and finish the basic lifecycle model.
+
+Status: in progress.
+
+What changed:
+
+- Added a story landing page with compact rows for title, image, last update,
+  and continue action.
+- Added create-new-story entry points that preserve the hero name but clear the
+  story goal and challenge.
+- Added reusable navigation back to the story landing page from persisted story
+  routes.
+- Added story lifecycle controls for `active`, `completed`, and `archived`.
+- Removed unused `draft` and `paused` story states from the app data model.
+- Added hard delete for stories from the story hub.
+- Added rejected quest feedback and replacement generation through "Try another".
 
 Work:
 
-- Add story list screen.
-- Add create-new-story entry point.
-- Add active, paused, archived, and completed story states.
-- Allow switching between stories.
-- Ensure quest generation always uses the selected story ID.
+- Keep active stories primary and completed/archived stories secondary on the
+  landing page.
+- Keep completed and archived stories review-first unless restored.
+- Ensure quest generation always uses the selected active story ID.
+- Keep rejected quests and optional feedback in quest history so future quests
+  can avoid similar bad fits.
 
 Acceptance criteria:
 
 - A user can have multiple stories.
 - Each story has independent quest history.
 - Archived or completed stories do not accidentally receive new quests.
+- Rejected quests are persisted with optional feedback.
+- Deleted stories disappear from the landing page.
 
 ### Phase 7: Upgrade User Management
 
@@ -549,8 +578,6 @@ can create mock-persisted stories, quests, results, and image asset references.
 
 These should not block the first persistence migration:
 
-- whether rejected or superseded proposals should be kept once rejection feedback
-  exists;
 - which richer feedback fields are worth promoting from the feedback object into
   first-class columns;
 - how much story progress should be summarized by deterministic fields versus

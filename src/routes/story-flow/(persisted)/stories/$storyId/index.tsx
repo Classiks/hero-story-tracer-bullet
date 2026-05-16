@@ -1,8 +1,10 @@
 import { Button } from '#/components/ui/button'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -14,10 +16,30 @@ import {
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
-import { useStorySessionQuery } from '#/modules/story-flow/story-api-client'
-import type { PersistedQuest, StoryProgress } from '#/modules/story-flow/persisted-types'
+import {
+  useDeleteStoryMutation,
+  useStorySessionQuery,
+  useUpdateStoryStatusMutation,
+} from '#/modules/story-flow/story-api-client'
+import type {
+  PersistedQuest,
+  PersistedStory,
+  StoryProgress,
+  StoryStatus,
+} from '#/modules/story-flow/persisted-types'
 import { createFileRoute } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, BookOpen, ImageIcon, ScrollText } from 'lucide-react'
+import {
+  Archive,
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Check,
+  ImageIcon,
+  Loader2,
+  RotateCcw,
+  ScrollText,
+  Trash2,
+} from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 
@@ -30,6 +52,7 @@ function RouteComponent() {
   const { storyId } = Route.useParams()
   const sessionQuery = useStorySessionQuery(storyId)
   const session = sessionQuery.data
+  const storyIsActive = session?.story.status === 'active'
 
   return (
     <StoryFrame>
@@ -64,35 +87,49 @@ function RouteComponent() {
           {session && (
             <div className="mt-10 pb-5">
               <StoryHeading compact>{session.story.blueprint.title}</StoryHeading>
-              <StoryCopy className="max-w-none text-foreground/80">
-                {session.story.blueprint.storyBlurb}
-              </StoryCopy>
+              <StoryHeroImage story={session.story} />
+              <StoryBlurbDialog story={session.story} />
 
-              <Button
-                className="mt-6 w-full"
-                onClick={() => {
-                  if (
-                    session.progress.nextAction === 'finish_accepted_quest' &&
-                    session.progress.currentQuest
-                  ) {
+              {storyIsActive ? (
+                <Button
+                  className="mt-6 w-full"
+                  onClick={() => {
+                    if (
+                      session.progress.nextAction === 'finish_accepted_quest' &&
+                      session.progress.currentQuest
+                    ) {
+                      void navigate({
+                        params: { questId: session.progress.currentQuest.id, storyId },
+                        to: '/story-flow/stories/$storyId/quest/$questId/feedback',
+                      })
+                      return
+                    }
+
                     void navigate({
-                      params: { questId: session.progress.currentQuest.id, storyId },
-                      to: '/story-flow/stories/$storyId/quest/$questId/feedback',
+                      params: { storyId },
+                      to: '/story-flow/stories/$storyId/quest/proposal',
                     })
-                    return
-                  }
+                  }}
+                  size="hero"
+                  variant="hero"
+                >
+                  {getNextActionLabel(session.progress.nextAction)}
+                  <ArrowRight />
+                </Button>
+              ) : (
+                <StorySurface className="mt-6 p-4">
+                  <p className="text-sm font-semibold text-foreground">
+                    {session.story.status === 'completed'
+                      ? 'This story is complete.'
+                      : 'This story is archived.'}
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    Restore it to active if you want to continue adding quests.
+                  </p>
+                </StorySurface>
+              )}
 
-                  void navigate({
-                    params: { storyId },
-                    to: '/story-flow/stories/$storyId/quest/proposal',
-                  })
-                }}
-                size="hero"
-                variant="hero"
-              >
-                {getNextActionLabel(session.progress.nextAction)}
-                <ArrowRight />
-              </Button>
+              <StoryLifecycleControls story={session.story} />
 
               <StorySoFar
                 nextAction={session.progress.nextAction}
@@ -122,6 +159,192 @@ function HubLoading() {
       </StoryHeading>
       <StoryCopy wide>The narrator is opening the current story path.</StoryCopy>
     </div>
+  )
+}
+
+function StoryHeroImage({ story }: { story: PersistedStory }) {
+  return (
+    <StorySurface
+      className="mt-6 overflow-hidden rounded-2xl border-2 border-foreground/20 bg-background shadow-[6px_6px_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      {story.storyImageUrl ? (
+        <img
+          alt={story.blueprint.title}
+          className="aspect-[4/3] w-full bg-background object-cover"
+          src={story.storyImageUrl}
+        />
+      ) : (
+        <div className="grid aspect-[4/3] place-items-center bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--accent)_20%,transparent),transparent_34%),linear-gradient(135deg,var(--card),var(--background))] px-8 text-center">
+          <div>
+            <ImageIcon className="mx-auto size-9 text-accent" />
+            <p className="mt-4 font-serif text-3xl leading-none text-foreground">
+              {story.blueprint.title}
+            </p>
+          </div>
+        </div>
+      )}
+    </StorySurface>
+  )
+}
+
+function StoryBlurbDialog({ story }: { story: PersistedStory }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button className="mt-4 px-0" size="sm" variant="link">
+          Read story setup
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{story.blueprint.title}</DialogTitle>
+          <DialogDescription>Story setup</DialogDescription>
+        </DialogHeader>
+
+        {story.storyImageUrl && (
+          <img
+            alt={story.blueprint.title}
+            className="aspect-video w-full rounded-lg border border-border bg-background object-contain"
+            src={story.storyImageUrl}
+          />
+        )}
+
+        <div className="space-y-4 text-sm leading-relaxed text-foreground/85">
+          {story.blueprint.storyBlurb
+            .split(/\n+/)
+            .map((paragraph) => paragraph.trim())
+            .filter(Boolean)
+            .map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function StoryLifecycleControls({ story }: { story: PersistedStory }) {
+  const navigate = Route.useNavigate()
+  const updateStatus = useUpdateStoryStatusMutation()
+  const deleteStory = useDeleteStoryMutation()
+
+  function updateStoryStatus(status: StoryStatus) {
+    updateStatus.mutate({ status, storyId: story.id })
+  }
+
+  return (
+    <StorySurface className="mt-5 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Story status
+          </p>
+          <p className="mt-1 text-sm font-semibold capitalize text-foreground">{story.status}</p>
+        </div>
+        {updateStatus.isPending && <Loader2 className="size-5 animate-spin text-muted-foreground" />}
+      </div>
+
+      {updateStatus.isError && (
+        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
+          The story status could not be updated. Try again.
+        </p>
+      )}
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {story.status === 'active' ? (
+          <>
+            <Button
+              disabled={updateStatus.isPending}
+              onClick={() => updateStoryStatus('completed')}
+              size="sm"
+              variant="outline"
+            >
+              <Check />
+              Complete
+            </Button>
+            <Button
+              disabled={updateStatus.isPending}
+              onClick={() => updateStoryStatus('archived')}
+              size="sm"
+              variant="outline"
+            >
+              <Archive />
+              Archive
+            </Button>
+          </>
+        ) : (
+          <Button
+            className="sm:col-span-2"
+            disabled={updateStatus.isPending}
+            onClick={() => updateStoryStatus('active')}
+            size="sm"
+            variant="outline"
+          >
+            <RotateCcw />
+            Restore
+          </Button>
+        )}
+        <DeleteStoryDialog
+          isDeleting={deleteStory.isPending}
+          onDelete={() => {
+            deleteStory.mutate(story.id, {
+              onSuccess: () => {
+                void navigate({ to: LandingRoute.to })
+              },
+            })
+          }}
+          storyTitle={story.blueprint.title}
+        />
+      </div>
+
+      {deleteStory.isError && (
+        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
+          The story could not be deleted. Try again.
+        </p>
+      )}
+    </StorySurface>
+  )
+}
+
+function DeleteStoryDialog({
+  isDeleting,
+  onDelete,
+  storyTitle,
+}: {
+  isDeleting: boolean
+  onDelete: () => void
+  storyTitle: string
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button className="sm:col-span-2" disabled={isDeleting} size="sm" variant="destructive">
+          {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
+          Delete story
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete this story?</DialogTitle>
+          <DialogDescription>
+            This permanently deletes {storyTitle}, including its quests and generated images.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="outline">
+              Keep story
+            </Button>
+          </DialogClose>
+          <Button disabled={isDeleting} onClick={onDelete} type="button" variant="destructive">
+            {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
+            Delete permanently
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

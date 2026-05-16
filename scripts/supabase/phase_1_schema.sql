@@ -9,8 +9,8 @@ create table if not exists public.stories (
   name text not null,
   goal text not null,
   challenge text not null,
-  status text not null default 'draft'
-    check (status in ('draft', 'active', 'paused', 'completed', 'archived')),
+  status text not null default 'active'
+    check (status in ('active', 'completed', 'archived')),
   blueprint jsonb,
   story_image_path text,
   story_image_url text,

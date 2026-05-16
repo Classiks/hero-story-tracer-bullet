@@ -3,9 +3,11 @@ import type {
   CompleteQuestRequest,
   CreateStoryRequest,
   QuestResponse,
+  RejectQuestRequest,
   StoryResponse,
   StoriesResponse,
   StorySessionResponse,
+  UpdateStoryStatusRequest,
 } from '#/modules/story-flow/persisted-types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -48,6 +50,53 @@ export function useStoryQuery(storyId: string | undefined) {
     refetchOnWindowFocus: false,
     retry: false,
     staleTime: Infinity,
+  })
+}
+
+export function useUpdateStoryStatusMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ storyId, ...input }: UpdateStoryStatusRequest & { storyId: string }) => {
+      const response = await authenticatedFetch(`/api/stories/${storyId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      })
+
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to update story'))
+      }
+
+      return (await response.json()) as StoryResponse
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['persisted-story', data.story.id], data)
+      void queryClient.invalidateQueries({ queryKey: ['persisted-stories'] })
+      void queryClient.invalidateQueries({ queryKey: ['story-session', data.story.id] })
+    },
+  })
+}
+
+export function useDeleteStoryMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (storyId: string) => {
+      const response = await authenticatedFetch(`/api/stories/${storyId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to delete story'))
+      }
+
+      return storyId
+    },
+    onSuccess: (storyId) => {
+      queryClient.removeQueries({ queryKey: ['persisted-story', storyId] })
+      queryClient.removeQueries({ queryKey: ['story-session', storyId] })
+      void queryClient.invalidateQueries({ queryKey: ['persisted-stories'] })
+    },
   })
 }
 
@@ -162,6 +211,29 @@ export function useCompleteQuestMutation() {
 
       if (!response.ok) {
         throw new Error(await readError(response, 'Failed to complete quest'))
+      }
+
+      return (await response.json()) as QuestResponse
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['persisted-quest', data.quest.id], data)
+      void queryClient.invalidateQueries({ queryKey: ['story-session', data.quest.storyId] })
+    },
+  })
+}
+
+export function useRejectQuestMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ questId, ...input }: RejectQuestRequest & { questId: string }) => {
+      const response = await authenticatedFetch(`/api/quests/${questId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to reject quest'))
       }
 
       return (await response.json()) as QuestResponse

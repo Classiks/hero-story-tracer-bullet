@@ -1,23 +1,14 @@
 import { SupabaseAuthError, requireSupabaseUser } from '#/lib/supabase-server'
-import { isQuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
-import { completePersistedQuest, StoryServiceError } from '#/modules/story-flow/story-service.server'
+import { rejectPersistedQuest, StoryServiceError } from '#/modules/story-flow/story-service.server'
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/api/quests/$questId/complete')({
+export const Route = createFileRoute('/api/quests/$questId/reject')({
   server: {
     handlers: {
       POST: async ({ params, request }) => {
         try {
-          const { supabase, user } = await requireSupabaseUser(request)
-          const input = await request.json()
-
-          if (!isQuestOutcomeStatus(input.outcomeStatus) || input.outcomeStatus === 'rejected') {
-            return Response.json(
-              { error: 'completed or unresolved outcomeStatus is required' },
-              { status: 400 },
-            )
-          }
-
+          const { supabase } = await requireSupabaseUser(request)
+          const input = await request.json().catch(() => ({}))
           const feedbackNote =
             input.feedback &&
             typeof input.feedback === 'object' &&
@@ -26,13 +17,10 @@ export const Route = createFileRoute('/api/quests/$questId/complete')({
               ? input.feedback.note.trim()
               : ''
           const feedback = feedbackNote ? { note: feedbackNote } : {}
-
-          const quest = await completePersistedQuest({
+          const quest = await rejectPersistedQuest({
             feedback,
-            outcomeStatus: input.outcomeStatus,
             questId: params.questId,
             supabase,
-            userId: user.id,
           })
 
           return Response.json({ quest })

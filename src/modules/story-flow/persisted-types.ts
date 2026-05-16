@@ -12,12 +12,14 @@ export type PersistedStory = {
   name: string
   goal: string
   challenge: string
-  status: 'draft' | 'active' | 'paused' | 'completed' | 'archived'
+  status: StoryStatus
   blueprint: IStoryBlueprint
   storyImagePath: string | null
   storyImageUrl: string | null
   updatedAt: string
 }
+
+export type StoryStatus = 'active' | 'completed' | 'archived'
 
 export type PersistedQuest = {
   id: string
@@ -74,6 +76,14 @@ export type CreateStoryRequest = {
 export type CompleteQuestRequest = {
   feedback: QuestFeedback
   outcomeStatus: QuestOutcomeStatus
+}
+
+export type RejectQuestRequest = {
+  feedback: QuestFeedback
+}
+
+export type UpdateStoryStatusRequest = {
+  status: StoryStatus
 }
 
 export type PersistedQuestProposal = Pick<PersistedQuest, 'id' | 'storyId' | 'sequenceNumber'> & IQuestProposal

@@ -24,6 +24,9 @@ function RouteComponent() {
   const storiesQuery = useStoriesQuery()
   const resetOnboarding = useOnboardingStore((state) => state.reset)
   const stories = storiesQuery.data?.stories ?? []
+  const activeStories = stories.filter((story) => story.status === 'active')
+  const completedStories = stories.filter((story) => story.status === 'completed')
+  const archivedStories = stories.filter((story) => story.status === 'archived')
 
   const startStory = () => {
     resetOnboarding()
@@ -83,14 +86,26 @@ function RouteComponent() {
 
               <section className="mt-8">
                 <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-                  Saved stories
+                  Active stories
                 </h2>
-                <div className="mt-3 grid gap-2.5">
-                  {stories.map((story) => (
-                    <StoryRow key={story.id} story={story} />
-                  ))}
-                </div>
+                {activeStories.length ? (
+                  <StoryList stories={activeStories} />
+                ) : (
+                  <StorySurface className="mt-3 p-4">
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      No active stories right now. Restore an archived or completed story, or start a new one.
+                    </p>
+                  </StorySurface>
+                )}
               </section>
+
+              {completedStories.length > 0 && (
+                <StorySection heading="Completed stories" stories={completedStories} />
+              )}
+
+              {archivedStories.length > 0 && (
+                <StorySection heading="Archived stories" stories={archivedStories} />
+              )}
             </div>
           )}
         </motion.div>
@@ -146,6 +161,27 @@ function EmptyLanding({ onStartStory }: { onStartStory: () => void }) {
   )
 }
 
+function StorySection({ heading, stories }: { heading: string; stories: PersistedStory[] }) {
+  return (
+    <section className="mt-8">
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+        {heading}
+      </h2>
+      <StoryList stories={stories} />
+    </section>
+  )
+}
+
+function StoryList({ stories }: { stories: PersistedStory[] }) {
+  return (
+    <div className="mt-3 grid gap-2.5">
+      {stories.map((story) => (
+        <StoryRow key={story.id} story={story} />
+      ))}
+    </div>
+  )
+}
+
 function StoryRow({ story }: { story: PersistedStory }) {
   const navigate = Route.useNavigate()
 
@@ -171,6 +207,7 @@ function StoryRow({ story }: { story: PersistedStory }) {
         </h3>
         <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
           {formatUpdatedAt(story.updatedAt)}
+          {story.status !== 'active' ? ` · ${story.status}` : ''}
         </p>
       </div>
 

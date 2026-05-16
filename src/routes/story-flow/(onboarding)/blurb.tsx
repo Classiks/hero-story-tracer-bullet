@@ -56,7 +56,7 @@ function RouteComponent() {
       <StoryFrame>
         <div className="flex min-h-svh flex-col justify-between px-5 py-6">
           <div>
-            <StoryKicker>Chronicle paused</StoryKicker>
+            <StoryKicker>Chronicle waiting</StoryKicker>
             <StoryHeading accent="pieces.">Missing</StoryHeading>
             <StoryCopy>
               The story needs a hero, a quest, and a challenge before it can

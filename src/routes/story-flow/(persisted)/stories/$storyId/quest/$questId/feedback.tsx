@@ -1,4 +1,5 @@
 import { Button } from '#/components/ui/button'
+import { QuestRealityTaskCard } from '#/components/story-flow/quest-context'
 import {
   StoryCopy,
   StoryFrame,
@@ -108,6 +109,8 @@ function RouteComponent() {
                 />
               </div>
             </StorySurface>
+
+            <QuestRealityTaskCard quest={quest} />
 
             <StorySurface className="mt-5 p-5">
               <div className="flex items-center justify-between gap-3">

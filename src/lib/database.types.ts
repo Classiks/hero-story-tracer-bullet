@@ -16,7 +16,7 @@ export type Database = {
           name: string
           goal: string
           challenge: string
-          status: 'draft' | 'active' | 'paused' | 'completed' | 'archived'
+          status: 'active' | 'completed' | 'archived'
           blueprint: Json | null
           story_image_path: string | null
           story_image_url: string | null
@@ -29,7 +29,7 @@ export type Database = {
           name: string
           goal: string
           challenge: string
-          status?: 'draft' | 'active' | 'paused' | 'completed' | 'archived'
+          status?: 'active' | 'completed' | 'archived'
           blueprint?: Json | null
           story_image_path?: string | null
           story_image_url?: string | null
@@ -42,13 +42,14 @@ export type Database = {
           name?: string
           goal?: string
           challenge?: string
-          status?: 'draft' | 'active' | 'paused' | 'completed' | 'archived'
+          status?: 'active' | 'completed' | 'archived'
           blueprint?: Json | null
           story_image_path?: string | null
           story_image_url?: string | null
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       quests: {
         Row: {
@@ -102,6 +103,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       generated_assets: {
         Row: {
@@ -143,6 +145,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
     }
     Views: Record<string, never>

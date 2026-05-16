@@ -3,10 +3,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '#/components/ui/dialog'
+import { QuestReasonDialog } from '#/components/story-flow/quest-context'
 import {
   StoryCopy,
   StoryFrame,
@@ -14,18 +16,20 @@ import {
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
+import { Textarea } from '#/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import type { PersistedQuest } from '#/modules/story-flow/persisted-types'
 import {
   useAcceptQuestMutation,
   useCreateQuestMutation,
+  useRejectQuestMutation,
   useStorySessionQuery,
 } from '#/modules/story-flow/story-api-client'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
-  CircleQuestionMark,
   Loader2,
   RefreshCw,
   ScrollText,
@@ -46,11 +50,30 @@ function RouteComponent() {
   const sessionQuery = useStorySessionQuery(storyId)
   const createQuest = useCreateQuestMutation()
   const requested = useRef(false)
+  const [suppressedQuestId, setSuppressedQuestId] = useState<string | null>(null)
   const latestQuest = sessionQuery.data?.latestQuest
+  const latestQuestIsSuppressed = Boolean(latestQuest && latestQuest.id === suppressedQuestId)
+  const latestQuestIsTerminal =
+    latestQuest && ['completed', 'unresolved', 'rejected'].includes(latestQuest.status)
   const shouldCreateQuest =
     sessionQuery.isSuccess &&
-    (!latestQuest || ['completed', 'unresolved', 'rejected'].includes(latestQuest.status))
-  const visibleQuest = createQuest.data?.quest ?? latestQuest
+    (!latestQuest || latestQuestIsTerminal || latestQuestIsSuppressed)
+  const createdQuest = createQuest.data?.quest
+  const visibleQuest =
+    createdQuest?.status === 'proposed'
+      ? createdQuest
+      : latestQuest?.status === 'proposed' && !latestQuestIsSuppressed
+        ? latestQuest
+        : null
+  const acceptedQuest =
+    !createdQuest && latestQuest?.status === 'accepted' && !latestQuestIsSuppressed
+      ? latestQuest
+      : null
+  const loadingMode = getQuestLoadingMode({
+    latestQuest,
+    latestQuestIsSuppressed,
+    shouldCreateQuest,
+  })
 
   useEffect(() => {
     if (!shouldCreateQuest || requested.current) {
@@ -65,7 +88,7 @@ function RouteComponent() {
     })
   }, [createQuest, shouldCreateQuest, storyId])
 
-  const isLoading = sessionQuery.isPending || (shouldCreateQuest && createQuest.isPending)
+  const isLoading = sessionQuery.isPending || (shouldCreateQuest && !visibleQuest && !hasCreateError(createQuest))
   const hasError = sessionQuery.isError || createQuest.isError
 
   return (
@@ -78,7 +101,9 @@ function RouteComponent() {
         >
           <StoryRouteHeader>Active quest</StoryRouteHeader>
 
-          {isLoading && <QuestLoading name={sessionQuery.data?.story.name} />}
+          {isLoading && (
+            <QuestLoading mode={loadingMode} name={sessionQuery.data?.story.name} />
+          )}
 
           {hasError && (
             <QuestErrorState
@@ -97,20 +122,59 @@ function RouteComponent() {
           {visibleQuest && (
             <QuestPresentation
               isCreatingQuest={createQuest.isPending}
-              onRegenerateQuest={() => {
+              onQuestRejected={() => {
+                setSuppressedQuestId(visibleQuest.id)
                 requested.current = true
-                createQuest.mutate(storyId)
+                createQuest.mutate(storyId, {
+                  onError: () => {
+                    requested.current = false
+                  },
+                })
               }}
               quest={visibleQuest}
             />
           )}
+
+          {acceptedQuest && <AcceptedQuestState quest={acceptedQuest} />}
         </motion.div>
       </main>
     </StoryFrame>
   )
 }
 
-function QuestLoading({ name }: { name: string | undefined }) {
+function hasCreateError(createQuest: ReturnType<typeof useCreateQuestMutation>) {
+  return createQuest.isError
+}
+
+function getQuestLoadingMode({
+  latestQuest,
+  latestQuestIsSuppressed,
+  shouldCreateQuest,
+}: {
+  latestQuest: PersistedQuest | null | undefined
+  latestQuestIsSuppressed: boolean
+  shouldCreateQuest: boolean
+}) {
+  if (latestQuestIsSuppressed) {
+    return 'replacement' as const
+  }
+
+  if (shouldCreateQuest && latestQuest) {
+    return 'next' as const
+  }
+
+  return 'first' as const
+}
+
+function QuestLoading({
+  mode,
+  name,
+}: {
+  mode: 'first' | 'next' | 'replacement'
+  name: string | undefined
+}) {
+  const copy = getQuestLoadingCopy(mode)
+
   return (
     <div className="mt-12">
       <motion.div
@@ -121,14 +185,71 @@ function QuestLoading({ name }: { name: string | undefined }) {
       >
         <ScrollText className="size-9" />
       </motion.div>
-      <StoryHeading accent="quest." compact>
-        Preparing
+      <StoryHeading compact>
+        {copy.heading}
       </StoryHeading>
       <StoryCopy wide>
-        The narrator is reading the path ahead{name ? ` for ${name}` : ''} and
-        shaping one step into a quest worth answering.
+        {copy.body(name)}
       </StoryCopy>
     </div>
+  )
+}
+
+function getQuestLoadingCopy(mode: 'first' | 'next' | 'replacement') {
+  switch (mode) {
+    case 'first':
+      return {
+        heading: 'Preparing your first quest',
+        body: (name: string | undefined) =>
+          `The narrator is reading the path ahead${name ? ` for ${name}` : ''} and shaping one step into a quest worth answering.`,
+      }
+    case 'next':
+      return {
+        heading: 'Preparing your next quest',
+        body: () =>
+          'The narrator is reading what already happened and shaping the next step.',
+      }
+    case 'replacement':
+      return {
+        heading: 'Finding a better fit',
+        body: () =>
+          'The old proposal has been set aside. The narrator is using your feedback to shape another quest.',
+      }
+  }
+}
+
+function AcceptedQuestState({ quest }: { quest: PersistedQuest }) {
+  const navigate = useNavigate()
+
+  return (
+    <StorySurface className="mt-12 p-5">
+      <div className="flex items-start gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent">
+          <ScrollText className="size-5" />
+        </div>
+        <div>
+          <h2 className="font-semibold text-foreground">This quest is already active.</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Finish the accepted quest before asking for a new one.
+          </p>
+        </div>
+      </div>
+
+      <Button
+        className="mt-5 w-full"
+        onClick={() =>
+          void navigate({
+            params: { questId: quest.id, storyId: quest.storyId },
+            to: FeedbackRoute.to,
+          })
+        }
+        size="hero"
+        variant="hero"
+      >
+        Finish quest
+        <ArrowRight />
+      </Button>
+    </StorySurface>
   )
 }
 
@@ -168,11 +289,11 @@ function QuestErrorState({
 
 function QuestPresentation({
   isCreatingQuest,
-  onRegenerateQuest,
+  onQuestRejected,
   quest,
 }: {
   isCreatingQuest: boolean
-  onRegenerateQuest: () => void
+  onQuestRejected: () => void
   quest: PersistedQuest
 }) {
   const navigate = useNavigate()
@@ -236,77 +357,152 @@ function QuestPresentation({
           Accept
         </Button>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              aria-label="Generate a new quest"
-              disabled={isCreatingQuest}
-              onClick={onRegenerateQuest}
-              size="hero-icon"
-              variant="outline"
-            >
-              <RefreshCw className={isCreatingQuest ? 'animate-spin' : undefined} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Generate a new quest</p>
-          </TooltipContent>
-        </Tooltip>
+        <RejectQuestDialog
+          disabled={isCreatingQuest}
+          isCreatingQuest={isCreatingQuest}
+          onRejected={onQuestRejected}
+          quest={quest}
+        />
 
-        <QuestReasonDialog quest={quest} />
+        <QuestReasonDialog quest={quest} tooltipLabel="Why this quest" />
       </div>
     </div>
   )
 }
 
-function QuestReasonDialog({ quest }: { quest: PersistedQuest }) {
+const REJECTION_REASONS = ['Not relevant', 'Too big', 'Bad timing', 'Unclear', 'Already done']
+
+function RejectQuestDialog({
+  disabled,
+  isCreatingQuest,
+  onRejected,
+  quest,
+}: {
+  disabled: boolean
+  isCreatingQuest: boolean
+  onRejected: () => void
+  quest: PersistedQuest
+}) {
+  const rejectQuest = useRejectQuestMutation()
   const [open, setOpen] = useState(false)
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([])
+  const [note, setNote] = useState('')
+
+  function toggleReason(reason: string) {
+    setSelectedReasons((current) =>
+      current.includes(reason)
+        ? current.filter((item) => item !== reason)
+        : [...current, reason],
+    )
+  }
+
+  function buildFeedbackNote() {
+    const trimmedNote = note.trim()
+    const reasonText = selectedReasons.length
+      ? `Rejected because: ${selectedReasons.join(', ')}.`
+      : ''
+
+    return [reasonText, trimmedNote].filter(Boolean).join(' ')
+  }
+
+  function reject() {
+    rejectQuest.mutate(
+      {
+        feedback: buildFeedbackNote() ? { note: buildFeedbackNote() } : {},
+        questId: quest.id,
+      },
+      {
+        onSuccess: () => {
+          setOpen(false)
+          setSelectedReasons([])
+          setNote('')
+          onRejected()
+        },
+      },
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
-            <Button aria-label="Why this quest" size="hero-icon" variant="outline">
-              <CircleQuestionMark />
+            <Button
+              aria-label="Try another quest"
+              disabled={disabled || rejectQuest.isPending}
+              size="hero-icon"
+              variant="outline"
+            >
+              {rejectQuest.isPending || isCreatingQuest ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <RefreshCw />
+              )}
             </Button>
           </DialogTrigger>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Why this quest</p>
+          <p>Try another quest</p>
         </TooltipContent>
       </Tooltip>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Why this quest</DialogTitle>
+          <DialogTitle>Try a different quest?</DialogTitle>
           <DialogDescription>
-            The hidden recommendation and story translation behind this quest.
+            Optional feedback helps the narrator avoid another quest with the same problem.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 text-sm">
-          <section className="rounded-2xl border border-border bg-card/60 p-4">
-            <h3 className="font-semibold text-foreground">Recommended step</h3>
-            <p className="mt-2 leading-relaxed text-muted-foreground">{quest.recommendedTask.task}</p>
-          </section>
-
-          <section className="rounded-2xl border border-border bg-card/60 p-4">
-            <h3 className="font-semibold text-foreground">Why</h3>
-            <p className="mt-2 leading-relaxed text-muted-foreground">{quest.recommendedTask.reasoning}</p>
-          </section>
-
-          <section className="rounded-2xl border border-border bg-card/60 p-4">
-            <h3 className="font-semibold text-foreground">What is being translated</h3>
-            <div className="mt-3 space-y-3">
-              {quest.quest.metaphors.map((metaphor) => (
-                <div key={`${metaphor.real}:${metaphor.metaphor}`} className="space-y-1">
-                  <p className="font-medium leading-snug text-foreground">{metaphor.real}</p>
-                  <p className="leading-relaxed text-muted-foreground">{metaphor.metaphor}</p>
-                </div>
-              ))}
-            </div>
-          </section>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Reason
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {REJECTION_REASONS.map((reason) => {
+              const selected = selectedReasons.includes(reason)
+              return (
+                <Button
+                  className="rounded-full"
+                  key={reason}
+                  onClick={() => toggleReason(reason)}
+                  size="sm"
+                  type="button"
+                  variant={selected ? 'hero' : 'outline'}
+                >
+                  {reason}
+                </Button>
+              )
+            })}
+          </div>
         </div>
+
+        <Textarea
+          className="min-h-28"
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Optional detail: too large for today, already done, unclear, not useful right now..."
+          value={note}
+        />
+
+        {rejectQuest.isError && (
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
+            This quest could not be rejected. Try again.
+          </p>
+        )}
+
+        <DialogFooter>
+          <Button onClick={() => setOpen(false)} type="button" variant="outline">
+            Keep quest
+          </Button>
+          <Button
+            disabled={rejectQuest.isPending || isCreatingQuest}
+            onClick={reject}
+            type="button"
+            variant="hero"
+          >
+            {rejectQuest.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+            Try another
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
