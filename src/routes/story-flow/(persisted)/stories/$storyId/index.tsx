@@ -11,7 +11,7 @@ import type { PersistedQuest, StoryProgress } from '#/modules/story-flow/persist
 import { createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleSlash, Clock3, ScrollText, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
+import { Route as LandingRoute } from '#/routes/story-flow/index'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/')({
   component: RouteComponent,
@@ -39,16 +39,16 @@ function RouteComponent() {
             <StorySurface className="mt-12 p-5">
               <h1 className="font-semibold text-foreground">The story could not be loaded.</h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Start again or try opening the story later.
+                Go back to your stories or try opening this one again later.
               </p>
               <Button
                 className="mt-5 w-full"
-                onClick={() => navigate({ to: StartRoute.to })}
+                onClick={() => navigate({ to: LandingRoute.to })}
                 size="hero"
                 variant="hero"
               >
                 <ArrowLeft />
-                Start onboarding
+                Back to stories
               </Button>
             </StorySurface>
           )}

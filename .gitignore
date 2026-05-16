@@ -15,3 +15,5 @@ todos.json
 .codex
 .vscode
 mocks
+
+src/routeTree.gen.ts

@@ -16,6 +16,7 @@ export type PersistedStory = {
   blueprint: IStoryBlueprint
   storyImagePath: string | null
   storyImageUrl: string | null
+  updatedAt: string
 }
 
 export type PersistedQuest = {

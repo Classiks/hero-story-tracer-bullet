@@ -566,6 +566,7 @@ async function toStoryResponse({
     name: string
     status: PersistedStory['status']
     story_image_path: string | null
+    updated_at: string
   }
   supabase: ServerSupabase
 }): Promise<PersistedStory> {
@@ -604,6 +605,7 @@ function mapStoryRow(
     name: string
     status: PersistedStory['status']
     story_image_path: string | null
+    updated_at: string
   },
   storyImageUrl: string | null,
 ): PersistedStory {
@@ -616,6 +618,7 @@ function mapStoryRow(
     status: row.status,
     storyImagePath: row.story_image_path,
     storyImageUrl,
+    updatedAt: row.updated_at,
   }
 }
 
