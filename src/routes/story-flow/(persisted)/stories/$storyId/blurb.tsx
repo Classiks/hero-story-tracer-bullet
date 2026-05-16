@@ -3,9 +3,9 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryKicker,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
+import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { useStoryQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
 import { useOnboardingStore } from '#/state/onboarding'
@@ -13,7 +13,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ImageIcon, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
-import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
+import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/blurb')({
@@ -64,7 +64,7 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <StoryKicker>Story blueprint</StoryKicker>
+          <StoryRouteHeader>Story blueprint</StoryRouteHeader>
 
           {storyQuery.isPending && <StoryLoading />}
 
@@ -73,12 +73,12 @@ function RouteComponent() {
               <ErrorState message="The chronicle could not be loaded." />
               <Button
                 className="mt-6 w-full"
-                onClick={() => navigate({ to: StartRoute.to })}
+                onClick={() => navigate({ to: LandingRoute.to })}
                 size="hero"
                 variant="hero"
               >
                 <ArrowLeft />
-                Start again
+                Back to stories
               </Button>
             </div>
           )}

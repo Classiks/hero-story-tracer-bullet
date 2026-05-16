@@ -3,9 +3,9 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryKicker,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
+import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { useStorySessionQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedQuest, StoryProgress } from '#/modules/story-flow/persisted-types'
 import { createFileRoute } from '@tanstack/react-router'
@@ -31,7 +31,7 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <StoryKicker>Story progress</StoryKicker>
+          <StoryRouteHeader>Story progress</StoryRouteHeader>
 
           {sessionQuery.isPending && <HubLoading />}
 

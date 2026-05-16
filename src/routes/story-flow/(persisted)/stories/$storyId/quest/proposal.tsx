@@ -11,9 +11,9 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryKicker,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
+import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import type { PersistedQuest } from '#/modules/story-flow/persisted-types'
 import {
@@ -33,7 +33,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
-import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
+import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as FeedbackRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/quest/proposal')({
@@ -76,12 +76,13 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <StoryKicker>Active quest</StoryKicker>
+          <StoryRouteHeader>Active quest</StoryRouteHeader>
 
           {isLoading && <QuestLoading name={sessionQuery.data?.story.name} />}
 
           {hasError && (
             <QuestErrorState
+              onBackToStories={() => navigate({ to: LandingRoute.to })}
               onRetry={() => {
                 requested.current = false
                 if (sessionQuery.isError) {
@@ -131,7 +132,13 @@ function QuestLoading({ name }: { name: string | undefined }) {
   )
 }
 
-function QuestErrorState({ onRetry }: { onRetry: () => void }) {
+function QuestErrorState({
+  onBackToStories,
+  onRetry,
+}: {
+  onBackToStories: () => void
+  onRetry: () => void
+}) {
   return (
     <StorySurface className="mt-12 p-5">
       <div className="flex items-start gap-3">
@@ -146,9 +153,15 @@ function QuestErrorState({ onRetry }: { onRetry: () => void }) {
         </div>
       </div>
 
-      <Button className="mt-5 w-full" onClick={onRetry} size="hero" variant="hero">
-        Try again
-      </Button>
+      <div className="mt-5 grid gap-3">
+        <Button className="w-full" onClick={onRetry} size="hero" variant="hero">
+          Try again
+        </Button>
+        <Button className="w-full" onClick={onBackToStories} size="hero" variant="outline">
+          <ArrowLeft />
+          Back to stories
+        </Button>
+      </div>
     </StorySurface>
   )
 }

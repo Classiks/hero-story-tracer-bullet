@@ -3,9 +3,9 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryKicker,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
+import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { Textarea } from '#/components/ui/textarea'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import {
@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
+import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as ResultRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/$questId/result'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback')({
@@ -64,7 +64,7 @@ function RouteComponent() {
   return (
     <StoryFrame>
       <main className="min-h-svh px-5 py-6">
-        <StoryKicker>Quest feedback</StoryKicker>
+        <StoryRouteHeader>Quest feedback</StoryRouteHeader>
 
         {questQuery.isPending && <QuestFeedbackLoading />}
 
@@ -76,12 +76,12 @@ function RouteComponent() {
             </p>
             <Button
               className="mt-5 w-full"
-              onClick={() => navigate({ to: StartRoute.to })}
+              onClick={() => navigate({ to: LandingRoute.to })}
               size="hero"
               variant="hero"
             >
               <ArrowLeft />
-              Start onboarding
+              Back to stories
             </Button>
           </StorySurface>
         )}

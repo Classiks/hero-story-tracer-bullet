@@ -4,15 +4,15 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryKicker,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
+import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { questOutcomeSucceeded, type QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
 import { useQuestQuery } from '#/modules/story-flow/story-api-client'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Award, CircleSlash, Flame, ScrollText, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
+import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 import { Route as NextRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/proposal'
 
@@ -32,7 +32,7 @@ function RouteComponent() {
   return (
     <StoryFrame>
       <main className="min-h-svh px-5 py-6">
-        <StoryKicker>{outcomeSucceeded ? 'Quest complete' : 'Quest unresolved'}</StoryKicker>
+        <StoryRouteHeader>{outcomeSucceeded ? 'Quest complete' : 'Quest unresolved'}</StoryRouteHeader>
 
         {questQuery.isPending && <QuestResultLoading outcomeStatus={outcomeStatus ?? 'unresolved'} />}
 
@@ -44,12 +44,12 @@ function RouteComponent() {
             </p>
             <Button
               className="mt-5 w-full"
-              onClick={() => navigate({ to: StartRoute.to })}
+              onClick={() => navigate({ to: LandingRoute.to })}
               size="hero"
               variant="hero"
             >
               <ArrowLeft />
-              Start onboarding
+              Back to stories
             </Button>
           </StorySurface>
         )}
