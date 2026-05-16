@@ -9,16 +9,7 @@ import {
 import { useStorySessionQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedQuest, StoryProgress } from '#/modules/story-flow/persisted-types'
 import { createFileRoute } from '@tanstack/react-router'
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  CircleSlash,
-  Clock3,
-  Loader2,
-  ScrollText,
-  Sparkles,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, CircleSlash, Clock3, ScrollText, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
 

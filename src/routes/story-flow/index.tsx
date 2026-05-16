@@ -4,7 +4,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { Route as StartingRoute } from '#/routes/story-flow/(onboarding)/name'
-import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/index'
+import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 
 export const Route = createFileRoute('/story-flow/')({
   component: RouteComponent,

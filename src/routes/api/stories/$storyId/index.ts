@@ -2,7 +2,7 @@ import { SupabaseAuthError, requireSupabaseUser } from '#/lib/supabase-server'
 import { getPersistedStory, StoryServiceError } from '#/modules/story-flow/story-service.server'
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/api/stories/$storyId')({
+export const Route = createFileRoute('/api/stories/$storyId/')({
   server: {
     handlers: {
       GET: async ({ params, request }) => {

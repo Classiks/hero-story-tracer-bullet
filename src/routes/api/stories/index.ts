@@ -6,7 +6,7 @@ import {
 } from '#/modules/story-flow/story-service.server'
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/api/stories')({
+export const Route = createFileRoute('/api/stories/')({
   server: {
     handlers: {
       GET: async ({ request }) => {

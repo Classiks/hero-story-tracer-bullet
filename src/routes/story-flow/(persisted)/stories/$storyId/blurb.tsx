@@ -14,7 +14,7 @@ import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ImageIcon, ShieldAlert } from
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
-import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/index'
+import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/blurb')({
   component: RouteComponent,
