@@ -1,5 +1,13 @@
 import { Button } from '#/components/ui/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '#/components/ui/dialog'
+import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
@@ -9,7 +17,7 @@ import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { useStorySessionQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedQuest, StoryProgress } from '#/modules/story-flow/persisted-types'
 import { createFileRoute } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, CheckCircle2, CircleSlash, Clock3, ScrollText, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, ImageIcon, ScrollText } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 
@@ -60,8 +68,6 @@ function RouteComponent() {
                 {session.story.blueprint.storyBlurb}
               </StoryCopy>
 
-              <ProgressSummary progress={session.progress} />
-
               <Button
                 className="mt-6 w-full"
                 onClick={() => {
@@ -88,7 +94,10 @@ function RouteComponent() {
                 <ArrowRight />
               </Button>
 
-              <QuestHistory quests={session.recentQuests} />
+              <StorySoFar
+                nextAction={session.progress.nextAction}
+                storyBeats={session.storyBeats}
+              />
             </div>
           )}
         </motion.div>
@@ -116,109 +125,145 @@ function HubLoading() {
   )
 }
 
-function ProgressSummary({ progress }: { progress: StoryProgress }) {
+function StorySoFar({
+  nextAction,
+  storyBeats,
+}: {
+  nextAction: StoryProgress['nextAction']
+  storyBeats: PersistedQuest[]
+}) {
   return (
-    <StorySurface className="mt-6 p-5">
-      <div className="flex items-start gap-3">
-        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-accent">
-          <Sparkles className="size-5" />
+    <section className="mt-9">
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+        Story so far
+      </h2>
+
+      {storyBeats.length ? (
+        <div className="mt-4 grid gap-5">
+          {storyBeats.map((quest) => (
+            <StoryComicPanel key={quest.id} quest={quest} />
+          ))}
         </div>
-        <div>
-          <h2 className="text-lg font-semibold leading-tight text-foreground">
-            {getProgressHeading(progress)}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {getProgressCopy(progress)}
-          </p>
-        </div>
+      ) : (
+        <EmptyComicState nextAction={nextAction} />
+      )}
+    </section>
+  )
+}
+
+function StoryComicPanel({ quest }: { quest: PersistedQuest }) {
+  const result = quest.resultText
+
+  if (!result) {
+    return null
+  }
+
+  return (
+    <StorySurface
+      className="overflow-hidden rounded-2xl border-2 border-foreground/20 bg-background shadow-[6px_6px_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <div className="border-b-2 border-foreground/15 bg-card">
+        {quest.resultImageUrl ? (
+          <img
+            alt={result.title}
+            className="aspect-[4/3] w-full bg-background object-cover"
+            src={quest.resultImageUrl}
+          />
+        ) : (
+          <div className="grid aspect-[4/3] place-items-center bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--accent)_20%,transparent),transparent_34%),linear-gradient(135deg,var(--card),var(--background))] px-8 text-center">
+            <div>
+              <ImageIcon className="mx-auto size-9 text-accent" />
+              <p className="mt-4 font-serif text-3xl leading-none text-foreground">
+                {result.title}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="mt-5 grid grid-cols-3 gap-2">
-        <ProgressCount icon={<CheckCircle2 className="size-4" />} label="Done" value={progress.counts.completed} />
-        <ProgressCount icon={<CircleSlash className="size-4" />} label="Unresolved" value={progress.counts.unresolved} />
-        <ProgressCount icon={<Clock3 className="size-4" />} label="Current" value={progress.currentQuest ? 1 : 0} />
+      <div className="p-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-black uppercase tracking-widest text-primary">
+            Page {quest.sequenceNumber}
+          </p>
+          <p className="rounded-full border border-border bg-card px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest text-muted-foreground">
+            {getStatusLabel(quest.status)}
+          </p>
+        </div>
+
+        <h3 className="mt-3 text-lg font-black leading-tight text-foreground">
+          {result.title}
+        </h3>
+        <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-foreground/80">
+          {result.text}
+        </p>
+        <ComicPageDialog quest={quest} />
       </div>
     </StorySurface>
   )
 }
 
-function ProgressCount({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: number
-}) {
+function ComicPageDialog({ quest }: { quest: PersistedQuest }) {
+  const result = quest.resultText
+
+  if (!result) {
+    return null
+  }
+
   return (
-    <div className="rounded-2xl border border-border bg-card/60 p-3 text-center">
-      <div className="mx-auto grid size-7 place-items-center rounded-xl bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <p className="mt-2 text-lg font-semibold text-foreground">{value}</p>
-      <p className="text-[0.68rem] font-semibold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </p>
-    </div>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button className="mt-4 px-0" size="sm" variant="link">
+          Read page
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85svh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{result.title}</DialogTitle>
+          <DialogDescription>
+            Page {quest.sequenceNumber} · {getStatusLabel(quest.status)}
+          </DialogDescription>
+        </DialogHeader>
+
+        {quest.resultImageUrl && (
+          <img
+            alt={result.title}
+            className="aspect-video w-full rounded-lg border border-border bg-background object-contain"
+            src={quest.resultImageUrl}
+          />
+        )}
+
+        <div className="space-y-4 text-sm leading-relaxed text-foreground/85">
+          {result.text
+            .split(/\n+/)
+            .map((paragraph) => paragraph.trim())
+            .filter(Boolean)
+            .map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-function QuestHistory({ quests }: { quests: PersistedQuest[] }) {
+function EmptyComicState({ nextAction }: { nextAction: StoryProgress['nextAction'] }) {
   return (
-    <section className="mt-8">
-      <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-        Recent quests
-      </h2>
-
-      {!quests.length && (
-        <StorySurface className="mt-3 p-5">
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            No quests yet. Start the first one to begin the record.
+    <StorySurface className="mt-4 p-5">
+      <div className="flex items-start gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-accent">
+          <BookOpen className="size-5" />
+        </div>
+        <div>
+          <h2 className="font-semibold leading-tight text-foreground">No pages yet</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {getEmptyComicCopy(nextAction)}
           </p>
-        </StorySurface>
-      )}
-
-      <div className="mt-3 grid gap-3">
-        {quests.map((quest) => (
-          <StorySurface key={quest.id} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Quest {quest.sequenceNumber} · {getStatusLabel(quest.status)}
-                </p>
-                <h3 className="mt-2 font-semibold leading-tight text-foreground">
-                  {quest.quest.quest}
-                </h3>
-                {quest.resultText && (
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {quest.resultText.title}
-                  </p>
-                )}
-              </div>
-              <StatusIcon status={quest.status} />
-            </div>
-          </StorySurface>
-        ))}
+        </div>
       </div>
-    </section>
-  )
-}
-
-function StatusIcon({ status }: { status: PersistedQuest['status'] }) {
-  const icon =
-    status === 'completed' ? (
-      <CheckCircle2 className="size-5" />
-    ) : status === 'unresolved' || status === 'rejected' ? (
-      <CircleSlash className="size-5" />
-    ) : (
-      <Clock3 className="size-5" />
-    )
-
-  return (
-    <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-      {icon}
-    </div>
+    </StorySurface>
   )
 }
 
@@ -235,29 +280,16 @@ function getNextActionLabel(action: StoryProgress['nextAction']) {
   }
 }
 
-function getProgressHeading(progress: StoryProgress) {
-  switch (progress.nextAction) {
+function getEmptyComicCopy(action: StoryProgress['nextAction']) {
+  switch (action) {
     case 'finish_accepted_quest':
-      return 'A quest is underway'
+      return 'Finish the active quest to turn this part of the journey into the first comic page.'
     case 'get_next_quest':
-      return 'Ready for the next step'
+      return 'The next recorded quest will become the first page in this story.'
     case 'review_proposal':
-      return 'A quest is waiting'
+      return 'Review the waiting quest, then record its outcome to start the comic.'
     case 'start_first_quest':
-      return 'The story is ready'
-  }
-}
-
-function getProgressCopy(progress: StoryProgress) {
-  switch (progress.nextAction) {
-    case 'finish_accepted_quest':
-      return 'Return to the accepted quest and record how it went.'
-    case 'get_next_quest':
-      return 'The last quest is recorded. Generate the next step when you are ready.'
-    case 'review_proposal':
-      return 'Review the proposed quest, accept it, or ask for another one.'
-    case 'start_first_quest':
-      return 'Start the first quest and begin building the story history.'
+      return 'Start the first quest. Completed moments will collect here as illustrated story pages.'
   }
 }
 

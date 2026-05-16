@@ -61,6 +61,7 @@ export type StorySessionResponse = {
   latestQuest: PersistedQuest | null
   progress: StoryProgress
   recentQuests: PersistedQuest[]
+  storyBeats: PersistedQuest[]
   story: PersistedStory
 }
 

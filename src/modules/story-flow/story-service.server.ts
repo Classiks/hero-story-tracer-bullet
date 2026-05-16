@@ -172,11 +172,16 @@ export async function getStorySession({
     (questRows ?? []).map((row) => toQuestResponse({ row, supabase })),
   )
   const recentQuests = allQuests.slice(0, 10)
+  const storyBeats = allQuests
+    .filter((quest) => quest.resultText)
+    .slice()
+    .reverse()
 
   return {
     latestQuest: allQuests[0] ?? null,
     progress: getStoryProgress(allQuests),
     recentQuests,
+    storyBeats,
     story,
   }
 }
