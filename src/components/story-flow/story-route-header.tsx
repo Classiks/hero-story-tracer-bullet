@@ -22,7 +22,6 @@ export function StoryRouteHeader({ children }: { children: ReactNode }) {
             onClick={() => navigate({ to: LandingRoute.to })}
             size="icon-sm"
             variant="outline"
-            sound={false}
           >
             <Library className="size-4" />
           </Button>
