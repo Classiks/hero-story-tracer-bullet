@@ -125,7 +125,7 @@ function RouteComponent() {
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button aria-label="What should I write in the note?" size="icon" variant="ghost">
+                    <Button aria-label="What should I write in the note?" size="icon" variant="ghost" sound={false}>
                       <CircleQuestionMark className="size-5" />
                     </Button>
                   </TooltipTrigger>

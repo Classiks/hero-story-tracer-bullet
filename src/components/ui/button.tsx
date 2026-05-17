@@ -92,18 +92,14 @@ function Button({
 
   function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
     onPointerDown?.(event)
-    playButtonSound(event)
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
     onKeyDown?.(event)
-
-    if (!event.repeat && (event.key === "Enter" || event.key === " ")) {
-      playButtonSound(event)
-    }
   }
 
   function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+    playButtonSound(event)
     onClick?.(event)
   }
 

@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "vite dev --port 3000",
-    "host": "vite dev --port 3000 --host",
+    "host": "vite --host 0.0.0.0 --port 3000 --strictPort",
     "mock": "MOCK=all vite dev --port 3000",
     "mock-image": "MOCK=image vite dev --port 3000",
     "build": "vite build",

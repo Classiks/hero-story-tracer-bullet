@@ -72,8 +72,8 @@ function RouteComponent() {
     createdQuest?.status === 'accepted' && !createdQuestIsSuppressed
       ? createdQuest
       : latestQuest?.status === 'accepted' && !latestQuestIsSuppressed
-      ? latestQuest
-      : null
+        ? latestQuest
+        : null
   const hasRenderableQuest = Boolean(visibleQuest || acceptedQuest)
   const loadingMode = getQuestLoadingMode({
     latestQuest,
@@ -426,6 +426,7 @@ function RejectQuestDialog({
               disabled={rejectQuest.isPending}
               size="hero-icon"
               variant="outline"
+              sound={false}
             >
               {rejectQuest.isPending ? (
                 <Loader2 className="animate-spin" />
