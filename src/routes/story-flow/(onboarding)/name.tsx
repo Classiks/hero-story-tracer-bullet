@@ -13,7 +13,6 @@ export const Route = createFileRoute('/story-flow/(onboarding)/name')({
 function RouteComponent() {
   const navigate = useNavigate();
   const [name, setName] = useOnboardingStore(useShallow(state => [state.name, state.setName]));
-  const heroName = name.trim();
 
   return (
     <OnboardingShell
@@ -26,15 +25,7 @@ function RouteComponent() {
           value={name}
           onChange={setName}
           onSubmit={() => navigate({ to: NextStepRoute.to })}
-          preview={
-            heroName ? (
-              <>
-                The story now has a hero: <span className="text-accent">{heroName}</span>.
-              </>
-            ) : (
-              'Every journey needs a name before it can answer back.'
-            )
-          }
+          helper="Every journey needs a name before it can answer back."
         />
       }
     >

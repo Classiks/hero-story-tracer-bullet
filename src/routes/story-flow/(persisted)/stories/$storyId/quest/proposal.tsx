@@ -1,4 +1,5 @@
 import { Button } from '#/components/ui/button'
+import { playSoundEffect } from '#/lib/sound-effects'
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,7 @@ import {
   DialogTrigger,
 } from '#/components/ui/dialog'
 import { QuestReasonDialog } from '#/components/story-flow/quest-context'
+import { InputDepthMeter } from '#/components/story-flow/input-depth-meter'
 import {
   StoryCopy,
   StoryFrame,
@@ -59,16 +61,20 @@ function RouteComponent() {
     sessionQuery.isSuccess &&
     (!latestQuest || latestQuestIsTerminal || latestQuestIsSuppressed)
   const createdQuest = createQuest.data?.quest
+  const createdQuestIsSuppressed = Boolean(createdQuest && createdQuest.id === suppressedQuestId)
   const visibleQuest =
-    createdQuest?.status === 'proposed'
+    createdQuest?.status === 'proposed' && !createdQuestIsSuppressed
       ? createdQuest
       : latestQuest?.status === 'proposed' && !latestQuestIsSuppressed
         ? latestQuest
         : null
   const acceptedQuest =
-    !createdQuest && latestQuest?.status === 'accepted' && !latestQuestIsSuppressed
+    createdQuest?.status === 'accepted' && !createdQuestIsSuppressed
+      ? createdQuest
+      : latestQuest?.status === 'accepted' && !latestQuestIsSuppressed
       ? latestQuest
       : null
+  const hasRenderableQuest = Boolean(visibleQuest || acceptedQuest)
   const loadingMode = getQuestLoadingMode({
     latestQuest,
     latestQuestIsSuppressed,
@@ -88,8 +94,13 @@ function RouteComponent() {
     })
   }, [createQuest, shouldCreateQuest, storyId])
 
-  const isLoading = sessionQuery.isPending || (shouldCreateQuest && !visibleQuest && !hasCreateError(createQuest))
-  const hasError = sessionQuery.isError || createQuest.isError
+  const isCreatingQuest =
+    shouldCreateQuest && !hasRenderableQuest && (createQuest.isIdle || createQuest.isPending)
+  const hasEmptyCreateResult = shouldCreateQuest && createQuest.isSuccess && !hasRenderableQuest
+  const isLoading =
+    !hasRenderableQuest && (sessionQuery.isPending || createQuest.isPending || isCreatingQuest)
+  const hasError =
+    !hasRenderableQuest && (sessionQuery.isError || createQuest.isError || hasEmptyCreateResult)
 
   return (
     <StoryFrame>
@@ -101,30 +112,12 @@ function RouteComponent() {
         >
           <StoryRouteHeader>Active quest</StoryRouteHeader>
 
-          {isLoading && (
-            <QuestLoading mode={loadingMode} name={sessionQuery.data?.story.name} />
-          )}
-
-          {hasError && (
-            <QuestErrorState
-              onBackToStories={() => navigate({ to: LandingRoute.to })}
-              onRetry={() => {
-                requested.current = false
-                if (sessionQuery.isError) {
-                  void sessionQuery.refetch()
-                  return
-                }
-                createQuest.mutate(storyId)
-              }}
-            />
-          )}
-
-          {visibleQuest && (
+          {visibleQuest ? (
             <QuestPresentation
-              isCreatingQuest={createQuest.isPending}
               onQuestRejected={() => {
                 setSuppressedQuestId(visibleQuest.id)
                 requested.current = true
+                createQuest.reset()
                 createQuest.mutate(storyId, {
                   onError: () => {
                     requested.current = false
@@ -133,17 +126,28 @@ function RouteComponent() {
               }}
               quest={visibleQuest}
             />
-          )}
-
-          {acceptedQuest && <AcceptedQuestState quest={acceptedQuest} />}
+          ) : acceptedQuest ? (
+            <AcceptedQuestState quest={acceptedQuest} />
+          ) : hasError ? (
+            <QuestErrorState
+              onBackToStories={() => navigate({ to: LandingRoute.to })}
+              onRetry={() => {
+                requested.current = false
+                if (sessionQuery.isError) {
+                  void sessionQuery.refetch()
+                  return
+                }
+                createQuest.reset()
+                createQuest.mutate(storyId)
+              }}
+            />
+          ) : isLoading ? (
+            <QuestLoading mode={loadingMode} name={sessionQuery.data?.story.name} />
+          ) : null}
         </motion.div>
       </main>
     </StoryFrame>
   )
-}
-
-function hasCreateError(createQuest: ReturnType<typeof useCreateQuestMutation>) {
-  return createQuest.isError
 }
 
 function getQuestLoadingMode({
@@ -185,7 +189,7 @@ function QuestLoading({
       >
         <ScrollText className="size-9" />
       </motion.div>
-      <StoryHeading compact>
+      <StoryHeading compact size="page">
         {copy.heading}
       </StoryHeading>
       <StoryCopy wide>
@@ -287,12 +291,7 @@ function QuestErrorState({
   )
 }
 
-function QuestPresentation({
-  isCreatingQuest,
-  onQuestRejected,
-  quest,
-}: {
-  isCreatingQuest: boolean
+function QuestPresentation({ onQuestRejected, quest }: {
   onQuestRejected: () => void
   quest: PersistedQuest
 }) {
@@ -302,7 +301,7 @@ function QuestPresentation({
   function handleAcceptQuest() {
     acceptQuest.mutate(quest.id, {
       onSuccess: ({ quest: acceptedQuest }) => {
-        void new Audio('/assets/sounds/quest-accepted.mp3').play().catch(() => undefined)
+        playSoundEffect('questAccepted')
         void navigate({
           params: { questId: acceptedQuest.id, storyId: acceptedQuest.storyId },
           to: FeedbackRoute.to,
@@ -316,6 +315,7 @@ function QuestPresentation({
       <StoryHeading
         className="mt-7"
         compact
+        size="page"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -358,8 +358,6 @@ function QuestPresentation({
         </Button>
 
         <RejectQuestDialog
-          disabled={isCreatingQuest}
-          isCreatingQuest={isCreatingQuest}
           onRejected={onQuestRejected}
           quest={quest}
         />
@@ -373,13 +371,9 @@ function QuestPresentation({
 const REJECTION_REASONS = ['Not relevant', 'Too big', 'Bad timing', 'Unclear', 'Already done']
 
 function RejectQuestDialog({
-  disabled,
-  isCreatingQuest,
   onRejected,
   quest,
 }: {
-  disabled: boolean
-  isCreatingQuest: boolean
   onRejected: () => void
   quest: PersistedQuest
 }) {
@@ -429,11 +423,11 @@ function RejectQuestDialog({
           <DialogTrigger asChild>
             <Button
               aria-label="Try another quest"
-              disabled={disabled || rejectQuest.isPending}
+              disabled={rejectQuest.isPending}
               size="hero-icon"
               variant="outline"
             >
-              {rejectQuest.isPending || isCreatingQuest ? (
+              {rejectQuest.isPending ? (
                 <Loader2 className="animate-spin" />
               ) : (
                 <RefreshCw />
@@ -482,6 +476,16 @@ function RejectQuestDialog({
           placeholder="Optional detail: too large for today, already done, unclear, not useful right now..."
           value={note}
         />
+        <InputDepthMeter
+          className="mt-0"
+          options={{
+            targetLength: 45,
+            minHelpfulLength: 25,
+            label: 'Useful feedback',
+            completeLabel: 'Rich feedback',
+          }}
+          value={note}
+        />
 
         {rejectQuest.isError && (
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
@@ -494,7 +498,7 @@ function RejectQuestDialog({
             Keep quest
           </Button>
           <Button
-            disabled={rejectQuest.isPending || isCreatingQuest}
+            disabled={rejectQuest.isPending}
             onClick={reject}
             type="button"
             variant="hero"

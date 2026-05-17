@@ -1,4 +1,5 @@
 import { Button } from '#/components/ui/button'
+import { InputDepthMeter } from '#/components/story-flow/input-depth-meter'
 import { QuestRealityTaskCard } from '#/components/story-flow/quest-context'
 import {
   StoryCopy,
@@ -89,7 +90,7 @@ function RouteComponent() {
 
         {quest && (
           <div className="mt-10 pb-5">
-            <StoryHeading compact>Quest wrap-up</StoryHeading>
+            <StoryHeading compact size="page">Quest wrap-up</StoryHeading>
             <StoryCopy className="max-w-none text-foreground/80">
               Mark the outcome. The narrator will turn it into the next story beat.
             </StoryCopy>
@@ -140,6 +141,15 @@ function RouteComponent() {
                 className="mt-4 min-h-32"
                 onChange={(event) => setNote(event.target.value)}
                 placeholder="I started, but got interrupted after ten minutes. The first step was clearer than expected."
+                value={note}
+              />
+              <InputDepthMeter
+                options={{
+                  targetLength: 100,
+                  minHelpfulLength: 35,
+                  label: 'Useful note',
+                  completeLabel: 'Rich note',
+                }}
                 value={note}
               />
             </StorySurface>
@@ -238,7 +248,7 @@ function QuestFeedbackLoading() {
       >
         <Sparkles className="size-5 text-primary" />
       </motion.div>
-      <StoryHeading accent="quest." compact>
+      <StoryHeading accent="quest." compact size="page">
         Reading
       </StoryHeading>
       <StoryCopy wide>

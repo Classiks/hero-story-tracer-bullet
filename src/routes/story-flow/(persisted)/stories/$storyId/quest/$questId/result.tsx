@@ -77,7 +77,7 @@ function RouteComponent() {
               title={quest.resultText.title}
             />
 
-            <StoryHeading className="mt-7" compact>{quest.resultText.title}</StoryHeading>
+            <StoryHeading className="mt-7" compact size="page">{quest.resultText.title}</StoryHeading>
 
             <StorySurface
               className="mt-6 p-5"
@@ -154,7 +154,7 @@ function QuestResultLoading({ outcomeStatus }: { outcomeStatus: QuestOutcomeStat
       >
         <Sparkles className="size-5 text-primary" />
       </motion.div>
-      <StoryHeading accent="chronicle." compact>
+      <StoryHeading accent="chronicle." compact size="page">
         Writing
       </StoryHeading>
       <StoryCopy wide>

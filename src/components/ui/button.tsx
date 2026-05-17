@@ -3,6 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
 import { cn } from "#/lib/utils"
+import { playSoundEffect } from "#/lib/sound-effects"
 
 const buttonVariants = cva(
   [
@@ -63,12 +64,27 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  disabled,
+  onClick,
+  sound,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    sound?: false | "click"
   }) {
   const Comp = asChild ? Slot.Root : "button"
+  const resolvedSound = sound ?? (variant === "link" ? false : "click")
+
+  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+    onClick?.(event)
+
+    const ariaDisabled = event.currentTarget.getAttribute("aria-disabled") === "true"
+
+    if (!event.defaultPrevented && !disabled && !ariaDisabled && resolvedSound === "click") {
+      playSoundEffect("buttonClick")
+    }
+  }
 
   return (
     <Comp
@@ -76,6 +92,8 @@ function Button({
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={disabled}
+      onClick={handleClick}
       {...props}
     />
   )

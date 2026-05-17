@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 
-import { StoryEyebrow, StoryFrame, StoryKicker } from './story-primitives'
+import { StoryEyebrow, StoryFrame } from './story-primitives'
+import { StoryRouteHeader } from './story-route-header'
 import type { ReactNode } from 'react'
 
 interface OnboardingShellProps {
@@ -43,7 +44,9 @@ export function OnboardingShell({
         }}
       >
         <div>
-          <StoryKicker variants={appear}>{chapter}</StoryKicker>
+          <motion.div variants={appear}>
+            <StoryRouteHeader>{chapter}</StoryRouteHeader>
+          </motion.div>
           <StoryEyebrow variants={appear}>{eyebrow}</StoryEyebrow>
           {children}
         </div>

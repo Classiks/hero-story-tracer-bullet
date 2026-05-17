@@ -13,7 +13,6 @@ export const Route = createFileRoute('/story-flow/(onboarding)/problem')({
 function RouteComponent() {
   const navigate = useNavigate();
   const [challenge, setChallenge] = useOnboardingStore(useShallow(state => [state.mainProblem, state.setMainProblem]));
-  const focusedChallenge = challenge.trim();
 
   return (
     <OnboardingShell
@@ -23,18 +22,17 @@ function RouteComponent() {
         <OnboardingStepForm
           inputLabel="Challenge"
           placeholder="What stands in the way?"
+          mode="multiLine"
+          depthMeter={{
+            targetLength: 140,
+            minHelpfulLength: 60,
+            label: 'Useful context',
+            completeLabel: 'Strong context',
+          }}
           value={challenge}
           onChange={setChallenge}
           onSubmit={() => navigate({ to: NextStepRoute.to })}
-          preview={
-            focusedChallenge ? (
-              <>
-                The opposition takes shape: <span className="text-accent">{focusedChallenge}</span>.
-              </>
-            ) : (
-              'The story gets stronger when the challenge has a name.'
-            )
-          }
+          helper="The story gets stronger when it knows what makes this hard right now."
         />
       }
     >

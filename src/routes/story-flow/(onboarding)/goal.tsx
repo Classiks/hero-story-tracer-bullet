@@ -13,7 +13,6 @@ export const Route = createFileRoute('/story-flow/(onboarding)/goal')({
 function RouteComponent() {
   const navigate = useNavigate();
   const [goal, setGoal] = useOnboardingStore(useShallow(state => [state.goal, state.setGoal]));
-  const focusedGoal = goal.trim();
 
   return (
     <OnboardingShell
@@ -23,18 +22,17 @@ function RouteComponent() {
         <OnboardingStepForm
           inputLabel="Goal"
           placeholder="What are you trying to achieve?"
+          mode="multiLine"
+          depthMeter={{
+            targetLength: 140,
+            minHelpfulLength: 60,
+            label: 'Useful direction',
+            completeLabel: 'Strong direction',
+          }}
           value={goal}
           onChange={setGoal}
           onSubmit={() => navigate({ to: NextStepRoute.to })}
-          preview={
-            focusedGoal ? (
-              <>
-                The path points toward: <span className="text-accent">{focusedGoal}</span>.
-              </>
-            ) : (
-              'A hero needs a destination before the road can appear.'
-            )
-          }
+          helper="A clear destination helps the narrator choose quests that fit your real life."
         />
       }
     >

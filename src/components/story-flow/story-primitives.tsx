@@ -96,18 +96,21 @@ export function StoryHeading({
   children,
   className,
   compact = false,
+  size = 'hero',
   ...props
 }: MotionHeadingProps & {
   accent?: ReactNode
   compact?: boolean
+  size?: 'hero' | 'page'
 }) {
   return (
     <motion.h1
       className={cn(
-        'font-serif text-5xl leading-none tracking-normal text-foreground sm:text-6xl',
+        'font-serif leading-none tracking-normal text-foreground',
+        size === 'hero' ? 'text-5xl sm:text-6xl' : 'text-3xl leading-tight sm:text-4xl',
         // Lift off background
         'drop-shadow-lg',
-        compact ? 'mt-10' : 'mt-12',
+        compact ? (size === 'page' ? 'mt-6' : 'mt-10') : 'mt-12',
         className,
       )}
       {...props}

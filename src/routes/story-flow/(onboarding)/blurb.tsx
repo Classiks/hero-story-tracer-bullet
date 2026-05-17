@@ -1,5 +1,6 @@
 import { Button } from '#/components/ui/button'
-import { StoryCopy, StoryFrame, StoryHeading, StoryKicker } from '#/components/story-flow/story-primitives'
+import { StoryCopy, StoryFrame, StoryHeading } from '#/components/story-flow/story-primitives'
+import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { useCreateStoryMutation } from '#/modules/story-flow/story-api-client'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute } from '@tanstack/react-router'
@@ -56,7 +57,7 @@ function RouteComponent() {
       <StoryFrame>
         <div className="flex min-h-svh flex-col justify-between px-5 py-6">
           <div>
-            <StoryKicker>Chronicle waiting</StoryKicker>
+            <StoryRouteHeader>Chronicle waiting</StoryRouteHeader>
             <StoryHeading accent="pieces.">Missing</StoryHeading>
             <StoryCopy>
               The story needs a hero, a quest, and a challenge before it can
@@ -85,7 +86,7 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <StoryKicker>Story blueprint</StoryKicker>
+          <StoryRouteHeader>Story blueprint</StoryRouteHeader>
 
           {createError ? (
             <div className="mt-12 rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-foreground">

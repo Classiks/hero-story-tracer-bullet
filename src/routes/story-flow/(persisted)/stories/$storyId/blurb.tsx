@@ -15,6 +15,7 @@ import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
+import { playSoundEffect } from '#/lib/sound-effects'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/blurb')({
   component: RouteComponent,
@@ -53,7 +54,7 @@ function RouteComponent() {
     }
 
     playedLevelUpKeys.add(audioKey)
-    void new Audio('/assets/sounds/levelup.mp3').play().catch(() => undefined)
+    playSoundEffect('levelUp')
   }, [story])
 
   return (
