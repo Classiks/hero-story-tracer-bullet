@@ -4,7 +4,10 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const session = await ensureAnonymousSession()
 
   if (!session) {
-    throw new Error('Supabase session is required')
+    return new Response(JSON.stringify({ error: 'Supabase session is required' }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 401,
+    })
   }
 
   const headers = new Headers(init.headers)

@@ -1,4 +1,5 @@
 import { Button } from '#/components/ui/button'
+import { AccountDialog } from '#/components/story-flow/account-dialog'
 import {
   StoryCopy,
   StoryFrame,
@@ -8,10 +9,13 @@ import {
 } from '#/components/story-flow/story-primitives'
 import { useStoriesQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
+import { continueAnonymously } from '#/lib/supabase-auth'
+import { useAuthStore } from '#/state/auth'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute } from '@tanstack/react-router'
-import { ArrowRight, BookOpen, ImageIcon, Plus, RefreshCcw } from 'lucide-react'
+import { ArrowRight, BookOpen, ImageIcon, LogIn, Plus, RefreshCcw } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { Route as StartingRoute } from '#/routes/story-flow/(onboarding)/name'
 import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 
@@ -21,7 +25,10 @@ export const Route = createFileRoute('/story-flow/')({
 
 function RouteComponent() {
   const navigate = Route.useNavigate()
-  const storiesQuery = useStoriesQuery()
+  const user = useAuthStore((state) => state.user)
+  const authIsLoading = useAuthStore((state) => state.isLoading)
+  const isExplicitlySignedOut = useAuthStore((state) => state.isExplicitlySignedOut)
+  const storiesQuery = useStoriesQuery({ enabled: Boolean(user) })
   const resetOnboarding = useOnboardingStore((state) => state.reset)
   const stories = storiesQuery.data?.stories ?? []
   const activeStories = stories.filter((story) => story.status === 'active')
@@ -41,11 +48,16 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <StoryKicker>Your stories</StoryKicker>
+          <div className="flex items-center justify-between gap-3">
+            <StoryKicker>Your stories</StoryKicker>
+            <AccountDialog />
+          </div>
 
-          {storiesQuery.isPending && <LandingLoading />}
+          {(authIsLoading || (user && storiesQuery.isPending)) && <LandingLoading />}
 
-          {storiesQuery.isError && (
+          {!authIsLoading && !user && <SignedOutLanding isExplicitlySignedOut={isExplicitlySignedOut} />}
+
+          {user && storiesQuery.isError && (
             <StorySurface className="mt-12 p-5">
               <h1 className="font-semibold text-foreground">Your stories could not be loaded.</h1>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -63,11 +75,11 @@ function RouteComponent() {
             </StorySurface>
           )}
 
-          {storiesQuery.isSuccess && stories.length === 0 && (
+          {user && storiesQuery.isSuccess && stories.length === 0 && (
             <EmptyLanding onStartStory={startStory} />
           )}
 
-          {storiesQuery.isSuccess && stories.length > 0 && (
+          {user && storiesQuery.isSuccess && stories.length > 0 && (
             <div className="mt-10 pb-5">
               <StoryHeading compact>Choose the story.</StoryHeading>
               <StoryCopy className="max-w-none text-foreground/80">
@@ -111,6 +123,58 @@ function RouteComponent() {
         </motion.div>
       </main>
     </StoryFrame>
+  )
+}
+
+function SignedOutLanding({ isExplicitlySignedOut }: { isExplicitlySignedOut: boolean }) {
+  const [isStartingGuestSession, setIsStartingGuestSession] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function startGuestSession() {
+    setError(null)
+    setIsStartingGuestSession(true)
+
+    try {
+      await continueAnonymously()
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Could not start a guest session.')
+      setIsStartingGuestSession(false)
+    }
+  }
+
+  return (
+    <StorySurface className="mt-12 p-5">
+      <div className="flex items-start gap-3">
+        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent">
+          <LogIn className="size-5" />
+        </div>
+        <div>
+          <h1 className="font-semibold text-foreground">
+            {isExplicitlySignedOut ? 'Choose how to enter.' : 'No active session.'}
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Sign in from the account button, or continue anonymously to start a guest story library.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
+          {error}
+        </p>
+      )}
+
+      <Button
+        className="mt-5 w-full"
+        disabled={isStartingGuestSession}
+        onClick={startGuestSession}
+        size="hero"
+        variant="hero"
+      >
+        <BookOpen />
+        Continue anonymously
+      </Button>
+    </StorySurface>
   )
 }
 

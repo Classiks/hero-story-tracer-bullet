@@ -100,8 +100,9 @@ export function useDeleteStoryMutation() {
   })
 }
 
-export function useStoriesQuery() {
+export function useStoriesQuery({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
+    enabled,
     queryKey: ['persisted-stories'],
     queryFn: async () => {
       const response = await authenticatedFetch('/api/stories')
