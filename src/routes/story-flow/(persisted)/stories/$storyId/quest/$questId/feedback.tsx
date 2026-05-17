@@ -9,7 +9,6 @@ import {
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { Textarea } from '#/components/ui/textarea'
-import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import {
   useCompleteQuestMutation,
   useQuestQuery,
@@ -31,6 +30,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as ResultRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/$questId/result'
+import { Popover, PopoverTrigger, PopoverContent } from '#/components/ui/popover'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback')({
   component: RouteComponent,
@@ -123,19 +123,19 @@ function RouteComponent() {
                     Note <span className="text-muted-foreground">(optional)</span>
                   </h2>
                 </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
+                <Popover>
+                  <PopoverTrigger asChild>
                     <Button aria-label="What should I write in the note?" size="icon" variant="ghost" sound={false}>
                       <CircleQuestionMark className="size-5" />
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-64">
+                  </PopoverTrigger>
+                  <PopoverContent className="max-w-64">
                     <p>
                       Add what worked, what failed, what got in the way, or what
                       changed. Leave this blank if the outcome says enough.
                     </p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <Textarea
                 className="mt-4 min-h-32"
