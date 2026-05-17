@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+<title id="title">Hero Journey Storytelling App Icon</title>
+<desc id="desc">A warm magical app icon with an open book, a golden quest path, and a guiding star.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#5B4AA5"/>
+    <stop offset="0.55" stop-color="#2D376E"/>
+    <stop offset="1" stop-color="#16233F"/>
+  </linearGradient>
+  <radialGradient id="glow" cx="50%" cy="27%" r="38%">
+    <stop offset="0" stop-color="#FFE175" stop-opacity=".46"/>
+    <stop offset=".55" stop-color="#FFC94D" stop-opacity=".16"/>
+    <stop offset="1" stop-color="#FFC94D" stop-opacity="0"/>
+  </radialGradient>
+  <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+    <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity=".34"/>
+  </filter>
+</defs>
+<rect width="1024" height="1024" rx="210" fill="url(#bg)"/>
+<circle cx="512" cy="276" r="340" fill="url(#glow)"/>
+<path d="M210 650 C310 350 630 230 813 430" fill="none" stroke="#E9D3FF" stroke-width="7" stroke-linecap="round" opacity=".25"/>
+<path d="M250 665 C345 420 607 281 775 438" fill="none" stroke="#FFE599" stroke-width="4" stroke-linecap="round" opacity=".22"/>
+<g opacity=".72" stroke="#FFE8A1" stroke-width="3" stroke-linecap="round">
+  <path d="M256 270 h22 M267 259 v22"/>
+  <path d="M760 346 h18 M769 337 v18"/>
+  <path d="M694 196 h12 M700 190 v12"/>
+  <path d="M326 490 h12 M332 484 v12"/>
+</g>
+<g filter="url(#softShadow)">
+  <path d="M225 696 L482 625 L512 852 L268 900 Z" fill="#FFEEC7" stroke="#E5AD52" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M799 696 L542 625 L512 852 L756 900 Z" fill="#FFF5DA" stroke="#E5AD52" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M512 640 L512 852" stroke="#C6843A" stroke-width="7" stroke-linecap="round"/>
+  <path d="M306 738 L450 714 M306 784 L450 760 M306 830 L450 806" stroke="#B97E53" stroke-width="4" opacity=".42" stroke-linecap="round"/>
+  <path d="M574 714 L718 738 M574 760 L718 784 M574 806 L718 830" stroke="#B97E53" stroke-width="4" opacity=".35" stroke-linecap="round"/>
+</g>
+<path d="M512 686 C340 555 704 467 512 306" fill="none" stroke="#8B5C23" stroke-width="32" stroke-linecap="round"/>
+<path d="M512 686 C340 555 704 467 512 306" fill="none" stroke="#FFC54D" stroke-width="22" stroke-linecap="round"/>
+<path d="M512 686 C340 555 704 467 512 306" fill="none" stroke="#FFEFA2" stroke-width="5" stroke-linecap="round"/>
+<path d="M512 594 L548 624 L538 671 L512 702 L486 671 L476 624 Z" fill="#684CAB" stroke="#FFE89C" stroke-width="5" stroke-linejoin="round"/>
+<path d="M512 186 L529 238 L584 238 L540 270 L557 323 L512 290 L467 323 L484 270 L440 238 L495 238 Z" fill="#FFE570" stroke="#975C1F" stroke-width="6" stroke-linejoin="round"/>
+</svg>

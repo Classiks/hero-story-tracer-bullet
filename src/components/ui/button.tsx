@@ -66,6 +66,8 @@ function Button({
   asChild = false,
   disabled,
   onClick,
+  onKeyDown,
+  onPointerDown,
   sound,
   ...props
 }: React.ComponentProps<"button"> &
@@ -76,14 +78,33 @@ function Button({
   const Comp = asChild ? Slot.Root : "button"
   const resolvedSound = sound ?? (variant === "link" ? false : "click")
 
-  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
-    onClick?.(event)
-
+  function shouldPlaySound(event: React.SyntheticEvent<HTMLButtonElement>) {
     const ariaDisabled = event.currentTarget.getAttribute("aria-disabled") === "true"
 
-    if (!event.defaultPrevented && !disabled && !ariaDisabled && resolvedSound === "click") {
+    return !event.defaultPrevented && !disabled && !ariaDisabled && resolvedSound === "click"
+  }
+
+  function playButtonSound(event: React.SyntheticEvent<HTMLButtonElement>) {
+    if (shouldPlaySound(event)) {
       playSoundEffect("buttonClick")
     }
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+    onPointerDown?.(event)
+    playButtonSound(event)
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+    onKeyDown?.(event)
+
+    if (!event.repeat && (event.key === "Enter" || event.key === " ")) {
+      playButtonSound(event)
+    }
+  }
+
+  function handleClick(event: React.MouseEvent<HTMLButtonElement>) {
+    onClick?.(event)
   }
 
   return (
@@ -94,6 +115,8 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={disabled}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onPointerDown={handlePointerDown}
       {...props}
     />
   )

@@ -10,6 +10,8 @@ const POOL_SIZE = 4
 
 const pools = new Map<SoundEffect, HTMLAudioElement[]>()
 const nextPoolIndexes = new Map<SoundEffect, number>()
+let audioContext: AudioContext | null = null
+let buttonClickBufferPromise: Promise<AudioBuffer | null> | null = null
 
 function createAudio(src: string) {
   const audio = new Audio(src)
@@ -30,8 +32,73 @@ function getAudioPool(effect: SoundEffect) {
   return pool
 }
 
-export function playSoundEffect(effect: SoundEffect) {
-  if (typeof window === 'undefined' || typeof Audio === 'undefined') {
+function getAudioContext() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  if (audioContext) {
+    return audioContext
+  }
+
+  const AudioContextConstructor =
+    window.AudioContext ??
+    (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+
+  if (!AudioContextConstructor) {
+    return null
+  }
+
+  audioContext = new AudioContextConstructor()
+  return audioContext
+}
+
+function getButtonClickBuffer(context: AudioContext) {
+  if (buttonClickBufferPromise) {
+    return buttonClickBufferPromise
+  }
+
+  buttonClickBufferPromise = fetch(SOUND_SOURCES.buttonClick)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Could not load sound: ${response.status}`)
+      }
+
+      return response.arrayBuffer()
+    })
+    .then((arrayBuffer) => context.decodeAudioData(arrayBuffer))
+    .catch(() => null)
+
+  return buttonClickBufferPromise
+}
+
+function playButtonClickWithWebAudio() {
+  const context = getAudioContext()
+
+  if (!context) {
+    return false
+  }
+
+  if (context.state === 'suspended') {
+    void context.resume().catch(() => undefined)
+  }
+
+  void getButtonClickBuffer(context).then((buffer) => {
+    if (!buffer) {
+      return
+    }
+
+    const source = context.createBufferSource()
+    source.buffer = buffer
+    source.connect(context.destination)
+    source.start()
+  })
+
+  return true
+}
+
+function playWithAudioElement(effect: SoundEffect) {
+  if (typeof Audio === 'undefined') {
     return
   }
 
@@ -48,4 +115,16 @@ export function playSoundEffect(effect: SoundEffect) {
   }
 
   void audio.play().catch(() => undefined)
+}
+
+export function playSoundEffect(effect: SoundEffect) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  if (effect === 'buttonClick' && playButtonClickWithWebAudio()) {
+    return
+  }
+
+  playWithAudioElement(effect)
 }
