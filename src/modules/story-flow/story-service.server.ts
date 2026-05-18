@@ -296,9 +296,9 @@ export async function createPersistedQuest({
 
   const sequenceNumber = (latestQuestRow?.sequence_number ?? 0) + 1
   const recentQuestRows = await getRecentQuestRows({ storyId, supabase })
-  const recentQuestHistory = formatRecentQuestHistory(recentQuestRows)
-  const recommendedTask = await generateRecommendedTask({ recentQuestHistory, story })
-  const quest = await generateQuest({ recentQuestHistory, recommendedTask, story })
+  const continuityContext = formatContinuityContext(recentQuestRows)
+  const recommendedTask = await generateRecommendedTask({ continuityContext, story })
+  const quest = await generateQuest({ continuityContext, recommendedTask, story })
 
   const { data: questRow, error: insertQuestError } = await supabase
     .from('quests')
@@ -415,7 +415,12 @@ export async function completePersistedQuest({
   assertStoryCanReceiveQuest(story)
   const recommendedTask = RecommendedTask.parse(existingQuestRow.recommended_task)
   const quest = Quest.parse(existingQuestRow.quest)
+  const recentQuestRows = await getRecentQuestRows({ storyId: story.id, supabase })
+  const continuityContext = formatContinuityContext(
+    recentQuestRows.filter((row) => row.id !== questId),
+  )
   const resultText = await generateQuestResultText({
+    continuityContext,
     feedback,
     outcomeStatus,
     quest,
@@ -570,10 +575,10 @@ async function generateStoryImage(blueprint: IStoryBlueprint) {
 }
 
 async function generateRecommendedTask({
-  recentQuestHistory,
+  continuityContext,
   story,
 }: {
-  recentQuestHistory: string
+  continuityContext: string
   story: PersistedStory
 }) {
   if (shouldMock('recommendedTask')) {
@@ -583,9 +588,9 @@ async function generateRecommendedTask({
   return generateData(
     createRecommendedTaskPrompt({
       challenge: story.challenge,
+      continuityContext,
       goal: story.goal,
       name: story.name,
-      recentQuestHistory,
       storyBlueprint: story.blueprint,
     }),
     RecommendedTask,
@@ -593,12 +598,12 @@ async function generateRecommendedTask({
 }
 
 async function generateQuest({
+  continuityContext,
   recommendedTask,
-  recentQuestHistory,
   story,
 }: {
+  continuityContext: string
   recommendedTask: IRecommendedTask
-  recentQuestHistory: string
   story: PersistedStory
 }) {
   if (shouldMock('quest')) {
@@ -608,9 +613,9 @@ async function generateQuest({
   return generateData(
     createQuestPrompt({
       challenge: story.challenge,
+      continuityContext,
       goal: story.goal,
       name: story.name,
-      recentQuestHistory,
       storyBlueprint: story.blueprint,
       task: recommendedTask,
     }),
@@ -619,12 +624,14 @@ async function generateQuest({
 }
 
 async function generateQuestResultText({
+  continuityContext,
   feedback,
   outcomeStatus,
   quest,
   recommendedTask,
   story,
 }: {
+  continuityContext: string
   feedback: QuestFeedback
   outcomeStatus: QuestOutcomeStatus
   quest: IQuest
@@ -638,6 +645,7 @@ async function generateQuestResultText({
   return generateData(
     createQuestResultTextPrompt({
       challenge: story.challenge,
+      continuityContext,
       feedback,
       goal: story.goal,
       name: story.name,
@@ -896,9 +904,10 @@ function getNextAction(latestQuest: PersistedQuest | null): StoryProgress['nextA
   return 'get_next_quest'
 }
 
-function formatRecentQuestHistory(
+function formatContinuityContext(
   rows: Array<{
     feedback: Json
+    id: string
     outcome_status: QuestOutcomeStatus | null
     quest: Json | null
     recommended_task: Json | null
@@ -912,23 +921,36 @@ function formatRecentQuestHistory(
   }
 
   return rows
+    .slice()
+    .reverse()
     .map((row) => {
       const quest = row.quest ? Quest.safeParse(row.quest).data : null
       const task = row.recommended_task ? RecommendedTask.safeParse(row.recommended_task).data : null
       const result = row.result_text ? QuestResultText.safeParse(row.result_text).data : null
       const feedback = parseFeedback(row.feedback)
       const parts = [
-        `#${row.sequence_number}`,
+        `Quest #${row.sequence_number}`,
         `status: ${row.status}`,
-        quest ? `quest: ${quest.quest}` : null,
-        task ? `task: ${task.task}` : null,
-        result ? `result: ${result.title}` : null,
-        feedback.note ? `feedback: ${feedback.note}` : null,
+        row.outcome_status ? `outcome: ${row.outcome_status}` : null,
+        task ? `real task: ${task.task}` : null,
+        quest ? `in-world title: ${quest.quest}` : null,
+        quest ? `in-world brief: ${quest.content}` : null,
+        quest ? `in-world action: ${quest.action}` : null,
+        quest?.metaphors.length ? `metaphor mappings: ${formatMetaphorMappings(quest.metaphors)}` : null,
+        result ? `result beat: ${result.title} - ${result.text}` : null,
+        result?.metaphors.length
+          ? `result mappings: ${formatMetaphorMappings(result.metaphors)}`
+          : null,
+        feedback.note ? `user feedback: ${feedback.note}` : null,
       ].filter(Boolean)
 
-      return `- ${parts.join('; ')}`
+      return `- ${parts.join('\n  ')}`
     })
     .join('\n')
+}
+
+function formatMetaphorMappings(metaphors: Array<{ metaphor: string; real: string }>) {
+  return metaphors.map((metaphor) => `${metaphor.real} -> ${metaphor.metaphor}`).join('; ')
 }
 
 function base64ToUint8Array(base64: string) {

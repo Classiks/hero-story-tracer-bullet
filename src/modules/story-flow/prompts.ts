@@ -67,15 +67,15 @@ Composition:
 
 export function createRecommendedTaskPrompt({
   challenge,
+  continuityContext,
   goal,
   name,
-  recentQuestHistory,
   storyBlueprint,
 }: {
   challenge: string
+  continuityContext?: string
   goal: string
   name: string
-  recentQuestHistory?: string
   storyBlueprint: IStoryBlueprint
 }) {
   return `
@@ -96,8 +96,8 @@ Story context:
 - Challenge metaphor: ${storyBlueprint.metaphors.enemy}
 - Reward: ${storyBlueprint.metaphors.reward}
 
-Recent quest history:
-${recentQuestHistory || '- No prior quests yet.'}
+Story continuity context:
+${continuityContext || '- No prior quests yet.'}
 
 Rules:
 - Choose exactly one next step the user can take soon.
@@ -106,9 +106,9 @@ Rules:
 - The task must include all needed details; never output a sentence fragment.
 - The task must move the user toward the goal and account for the challenge.
 - Do not invent personal history beyond the provided inputs.
-- Avoid repeating a recent completed or unresolved quest unless the history makes
+- Avoid repeating a recent completed or unresolved quest unless the continuity context makes
   a direct retry clearly useful.
-- Use the history to keep continuity, but prioritize the user's current goal and
+- Use the continuity context to choose the next practical step, but prioritize the user's current goal and
   challenge over elaborate plot callbacks.
 - Reasoning should be concise and practical.
 - Avoid vague branded ritual names unless they make the action clearer.
@@ -117,16 +117,16 @@ Rules:
 
 export function createQuestPrompt({
   challenge,
+  continuityContext,
   goal,
   name,
-  recentQuestHistory,
   storyBlueprint,
   task,
 }: {
   challenge: string
+  continuityContext?: string
   goal: string
   name: string
-  recentQuestHistory?: string
   storyBlueprint: IStoryBlueprint
   task: IRecommendedTask
 }) {
@@ -158,8 +158,8 @@ Hidden recommended task:
 - Task: ${task.task}
 - Reasoning: ${task.reasoning}
 
-Recent quest history:
-${recentQuestHistory || '- No prior quests yet.'}
+Story continuity context:
+${continuityContext || '- No prior quests yet.'}
 
 Rules:
 - quest: short in-world quest title. Do not use literal productivity terms.
@@ -169,10 +169,14 @@ Rules:
 - action must be actionable while staying fully inside the story metaphor.
 - metaphors: list the important real-world concepts and their story-world translations for the explanation dialog.
 - The first metaphors item must map the complete real-world recommended task to the generated in-world action.
-- Keep the story aligned with the base blurb; do not create a different world.
-- Let recent history influence continuity and avoid repeating the same quest
-  framing, but do not recap the whole history.
-- The quest can vary its phrasing and metaphors even when the task stays the same.
+- Treat the hero, challenge metaphor, and reward as canon. They are the spine of the story.
+- Build from the continuity context. The quest should feel like the next chapter after the latest known story beat.
+- Prefer evolving existing story elements over introducing new lore.
+- Do not introduce a new named actor, place, faction, authority, artifact, or obstacle unless the visible content explains how it relates to the existing hero, enemy, reward, or a prior quest outcome.
+- If a new obstacle appears, frame it as a face of the existing challenge metaphor or as a consequence of the current story state.
+- Keep the story aligned with the base blurb; do not create a different world, genre, or premise.
+- Let continuity influence framing and avoid repeating the same quest framing, but do not recap the whole history.
+- The quest can vary phrasing, but variation must not break established canon.
 - The metaphor must sharpen the real task, not hide it behind vague fantasy.
 - Keep concrete real-world details out of quest, content, and action unless those exact words already belong to the story world.
 - Banned from quest/content/action when they break immersion: coding, calendar, app, 25 minutes, distractions, task, schedule.
@@ -189,6 +193,7 @@ Rules:
 
 export function createQuestResultTextPrompt({
   challenge,
+  continuityContext,
   feedback,
   goal,
   name,
@@ -198,6 +203,7 @@ export function createQuestResultTextPrompt({
   task,
 }: {
   challenge: string
+  continuityContext?: string
   feedback: QuestFeedback
   goal: string
   name: string
@@ -228,6 +234,9 @@ Story context:
 - Challenge metaphor: ${storyBlueprint.metaphors.enemy}
 - Reward: ${storyBlueprint.metaphors.reward}
 
+Story continuity before this quest:
+${continuityContext || '- No prior quests yet.'}
+
 Quest attempted:
 - Quest title: ${quest.quest}
 - Quest brief: ${quest.content}
@@ -248,6 +257,11 @@ Rules:
 - If the quest was completed, show a small but meaningful change in the world.
 - If the quest was abandoned or failed, show a setback or unresolved pressure without shaming the user.
 - Treat the user note as factual feedback about how the attempt went, but do not quote it mechanically.
+- Treat the hero, challenge metaphor, and reward as canon. They are the spine of the story.
+- Build from the continuity context and the attempted quest. The beat should feel like the next chapter, not an isolated vignette.
+- Prefer evolving existing story elements over introducing new lore.
+- Do not introduce a new named actor, place, faction, authority, artifact, or obstacle unless the text explains how it relates to the existing hero, enemy, reward, or a prior quest outcome.
+- If a new obstacle appears, frame it as a face of the existing challenge metaphor or as a consequence of the current story state.
 - Keep the story aligned with the original world, hero, enemy, and reward.
 - Do not generate a new quest or direct next task here.
 - Do not expose hidden recommendation reasoning or literal productivity terms unless they already belong naturally in the story world.
