@@ -4,10 +4,9 @@ import {
   isNotFound,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+// import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+// import { TanStackDevtools } from '@tanstack/react-devtools'
+// import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
 
@@ -94,6 +93,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <SupabaseAuthBootstrap />
           {children}
         </TooltipProvider>
+        {/*
         <TanStackDevtools
           config={{
             position: 'bottom-right',
@@ -106,6 +106,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             TanStackQueryDevtools,
           ]}
         />
+        */}
         <Scripts />
       </body>
     </html>
