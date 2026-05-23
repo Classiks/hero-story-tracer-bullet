@@ -5,6 +5,7 @@ interface AuthState {
   error: string | null
   isExplicitlySignedOut: boolean
   isLoading: boolean
+  isPasswordRecovery: boolean
   session: Session | null
   user: User | null
   setAuthState: (state: Partial<Omit<AuthState, 'setAuthState'>>) => void
@@ -14,6 +15,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   error: null,
   isExplicitlySignedOut: false,
   isLoading: true,
+  isPasswordRecovery: false,
   session: null,
   user: null,
   setAuthState: (state) => set((current) => ({ ...current, ...state })),

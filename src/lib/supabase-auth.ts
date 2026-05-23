@@ -50,6 +50,22 @@ export async function ensureAnonymousSession() {
   return continueAnonymously()
 }
 
+export function hasSupabaseAuthRedirectInUrl() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const url = new URL(window.location.href)
+  const searchAndHash = `${url.search} ${url.hash}`
+
+  return (
+    searchAndHash.includes('access_token=') ||
+    searchAndHash.includes('code=') ||
+    searchAndHash.includes('refresh_token=') ||
+    searchAndHash.includes('type=recovery')
+  )
+}
+
 export async function continueAnonymously() {
   setExplicitlySignedOut(false)
 
@@ -73,9 +89,11 @@ export async function continueAnonymously() {
 
 export async function upgradeAnonymousUser({
   email,
+  emailRedirectTo,
   password,
 }: {
   email: string
+  emailRedirectTo?: string
   password: string
 }) {
   const session = await getCurrentSession()
@@ -87,7 +105,40 @@ export async function upgradeAnonymousUser({
   const {
     data: { user },
     error,
-  } = await supabase.auth.updateUser({ email, password })
+  } = await supabase.auth.updateUser(
+    { email, password },
+    emailRedirectTo ? { emailRedirectTo } : undefined,
+  )
+
+  if (error) {
+    throw error
+  }
+
+  setExplicitlySignedOut(false)
+  return user
+}
+
+export async function requestPasswordReset({
+  email,
+  redirectTo,
+}: {
+  email: string
+  redirectTo: string
+}) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  })
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function updatePassword({ password }: { password: string }) {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.updateUser({ password })
 
   if (error) {
     throw error

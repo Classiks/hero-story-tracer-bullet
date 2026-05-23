@@ -12,6 +12,7 @@ import appCss from '../styles.css?url'
 
 import type { QueryClient } from '@tanstack/react-query'
 import { TooltipProvider } from '#/components/ui/tooltip'
+import { Toaster } from '#/components/ui/sonner'
 import { SupabaseAuthBootstrap } from '#/components/supabase-auth-bootstrap'
 
 interface MyRouterContext {
@@ -92,6 +93,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <TooltipProvider>
           <SupabaseAuthBootstrap />
           {children}
+          <Toaster position="top-center" richColors />
         </TooltipProvider>
         {/*
         <TanStackDevtools
