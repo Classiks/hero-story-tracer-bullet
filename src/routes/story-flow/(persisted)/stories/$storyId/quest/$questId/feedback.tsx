@@ -1,12 +1,12 @@
 import { Button } from '#/components/ui/button'
 import { InputDepthMeter } from '#/components/story-flow/input-depth-meter'
 import { QuestRealityTaskCard } from '#/components/story-flow/quest-context'
-import { RotatingLoadingText } from '#/components/story-flow/rotating-loading-text'
 import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
   StorySurface,
+  StoryWaitState,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { Textarea } from '#/components/ui/textarea'
@@ -62,6 +62,16 @@ function RouteComponent() {
           })
         },
       },
+    )
+  }
+
+  if (completeQuest.isPending) {
+    return (
+      <StoryFrame>
+        <main className="min-h-svh px-5 py-6">
+          <QuestResultWritingLoading />
+        </main>
+      </StoryFrame>
     )
   }
 
@@ -164,29 +174,6 @@ function RouteComponent() {
               </div>
             )}
 
-            {completeQuest.isPending && (
-              <StorySurface className="mt-5 border-accent/25 bg-accent/10 p-4">
-                <div className="flex items-start gap-3">
-                  <motion.div
-                    className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent"
-                    animate={{ scale: [1, 1.08, 1], rotate: [0, -3, 3, 0] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <ScrollText className="size-5" />
-                  </motion.div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">
-                      Writing the result...
-                    </p>
-                    <RotatingLoadingText
-                      className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground"
-                      messages={questResultWritingMessages}
-                    />
-                  </div>
-                </div>
-              </StorySurface>
-            )}
-
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Mark quest
@@ -222,6 +209,18 @@ function RouteComponent() {
         )}
       </main>
     </StoryFrame>
+  )
+}
+
+function QuestResultWritingLoading() {
+  return (
+    <StoryWaitState
+      body="The narrator is turning your outcome into the next story beat."
+      heading="Writing"
+      headingAccent="the result."
+      icon={<ScrollText className="size-9" />}
+      messages={questResultWritingMessages}
+    />
   )
 }
 
