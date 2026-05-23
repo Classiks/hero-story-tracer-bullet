@@ -253,7 +253,7 @@ function StoryRow({ story }: { story: PersistedStory }) {
   const navigate = Route.useNavigate()
 
   return (
-    <StorySurface className="flex items-center gap-3 p-3">
+    <StorySurface className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-3">
       <div className="h-14 w-16 shrink-0 overflow-hidden rounded-xl bg-background/65">
         {story.storyImageUrl ? (
           <img
