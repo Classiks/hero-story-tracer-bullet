@@ -1,17 +1,17 @@
 export const USER_TEXT_MODEL_OPTIONS = [
   {
-    description: 'longer, better results',
+    description: 'Deepest reasoning, slowest pace',
     label: 'Pro',
     value: 'gemini-3.1-pro-preview',
   },
   {
-    description: 'balanced',
+    description: 'Strong balance of speed and quality',
     label: 'Flash',
     value: 'gemini-3-flash-preview',
   },
   {
-    description: 'fast, worse results',
-    label: 'Flash-lite',
+    description: 'Fastest, lightest everyday mode',
+    label: 'Flash Lite',
     value: 'gemini-3.1-flash-lite-preview',
   },
 ] as const

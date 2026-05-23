@@ -26,7 +26,13 @@ import {
   USER_TEXT_MODEL_OPTIONS,
 } from '#/modules/user-settings'
 import { useAuthStore } from '#/state/auth'
-import { Loader2, Settings } from 'lucide-react'
+import { Brain, Circle, Loader2, Settings, Zap } from 'lucide-react'
+
+const MODEL_ICONS = {
+  'gemini-3.1-flash-lite-preview': Zap,
+  'gemini-3.1-pro-preview': Brain,
+  'gemini-3-flash-preview': Circle,
+} as const
 
 export function SettingsDialog() {
   const user = useAuthStore((state) => state.user)
@@ -81,12 +87,27 @@ export function SettingsDialog() {
             <SelectTrigger className="w-full" id="text-model">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              {USER_TEXT_MODEL_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label} - {option.description}
-                </SelectItem>
-              ))}
+            <SelectContent className="w-[min(var(--radix-select-trigger-width),calc(100vw-2rem))]">
+              {USER_TEXT_MODEL_OPTIONS.map((option) => {
+                const Icon = MODEL_ICONS[option.value]
+
+                return (
+                  <SelectItem
+                    className="items-start"
+                    key={option.value}
+                    textValue={`${option.label} ${option.description}`}
+                    value={option.value}
+                  >
+                    <Icon className="size-4" />
+                    <div className="min-w-0 flex-1">
+                      <span className="block font-medium leading-tight">{option.label}</span>
+                      <span className="block truncate text-xs leading-tight text-muted-foreground">
+                        {option.description}
+                      </span>
+                    </div>
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
           {updateSettings.isError && (
