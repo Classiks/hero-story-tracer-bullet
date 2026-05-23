@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect } from 'react'
+import { useAppNavigate } from '#/lib/use-app-navigate'
 import { Route as StoryFlowRoute } from '#/routes/story-flow/index'
 
 export const Route = createFileRoute('/')({
@@ -7,7 +8,7 @@ export const Route = createFileRoute('/')({
 })
 
 function RouteComponent() {
-  const navigate = Route.useNavigate()
+  const navigate = useAppNavigate()
 
   useEffect(() => {
     void navigate({ replace: true, to: StoryFlowRoute.to })

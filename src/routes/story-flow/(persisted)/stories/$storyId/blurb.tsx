@@ -11,7 +11,8 @@ import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-ima
 import { useGenerateStoryImageMutation, useStoryQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
 import { useOnboardingStore } from '#/state/onboarding'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useAppNavigate } from '#/lib/use-app-navigate'
+import { createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ScrollText, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/b
 const playedLevelUpKeys = new Set<string>()
 
 function RouteComponent() {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
   const { storyId } = Route.useParams()
   const storyQuery = useStoryQuery(storyId)
   const setName = useOnboardingStore((state) => state.setName)
@@ -110,7 +111,7 @@ function StoryLoading() {
 }
 
 function StoryPresentation({ story }: { story: PersistedStory }) {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
   const generateStoryImage = useGenerateStoryImageMutation(story.id)
   const blueprint = story.blueprint
   const imageMissing = !story.storyImageUrl

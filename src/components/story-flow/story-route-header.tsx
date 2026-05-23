@@ -1,7 +1,7 @@
 import { Button } from '#/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
+import { useAppNavigate } from '#/lib/use-app-navigate'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
-import { useNavigate } from '@tanstack/react-router'
 import { Home } from 'lucide-react'
 
 import { StoryKicker } from './story-primitives'
@@ -17,7 +17,7 @@ export function StoryRouteHeader({
   children: ReactNode
   showHomeAction?: boolean
 }) {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
 
   return (
     <div className="flex items-center justify-between gap-3">

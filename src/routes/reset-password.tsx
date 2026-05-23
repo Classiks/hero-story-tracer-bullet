@@ -15,6 +15,7 @@ import {
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { updatePassword } from '#/lib/supabase-auth'
+import { useAppNavigate } from '#/lib/use-app-navigate'
 import { useAuthStore } from '#/state/auth'
 import { createFileRoute } from '@tanstack/react-router'
 import { KeyRound, Loader2 } from 'lucide-react'
@@ -34,7 +35,7 @@ export const Route = createFileRoute('/reset-password')({
 })
 
 function RouteComponent() {
-  const navigate = Route.useNavigate()
+  const navigate = useAppNavigate()
   const user = useAuthStore((state) => state.user)
   const isLoading = useAuthStore((state) => state.isLoading)
   const isPasswordRecovery = useAuthStore((state) => state.isPasswordRecovery)

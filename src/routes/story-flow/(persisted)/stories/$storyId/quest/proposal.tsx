@@ -27,7 +27,8 @@ import {
   useRejectQuestMutation,
   useStorySessionQuery,
 } from '#/modules/story-flow/story-api-client'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useAppNavigate } from '#/lib/use-app-navigate'
+import { createFileRoute } from '@tanstack/react-router'
 import {
   ArrowLeft,
   ArrowRight,
@@ -48,7 +49,7 @@ export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/q
 })
 
 function RouteComponent() {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
   const { storyId } = Route.useParams()
   const sessionQuery = useStorySessionQuery(storyId)
   const createQuest = useCreateQuestMutation()
@@ -236,7 +237,7 @@ function getQuestLoadingCopy(mode: 'first' | 'next' | 'replacement') {
 }
 
 function AcceptedQuestState({ quest }: { quest: PersistedQuest }) {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
 
   return (
     <StorySurface className="mt-12 p-5">
@@ -308,7 +309,7 @@ function QuestPresentation({ onQuestRejected, quest }: {
   onQuestRejected: () => void
   quest: PersistedQuest
 }) {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
   const acceptQuest = useAcceptQuestMutation()
 
   function handleAcceptQuest() {

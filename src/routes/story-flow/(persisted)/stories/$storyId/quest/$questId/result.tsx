@@ -10,7 +10,8 @@ import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-image-placeholder'
 import { questOutcomeSucceeded, type QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
 import { useGenerateQuestResultImageMutation, useQuestQuery } from '#/modules/story-flow/story-api-client'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useAppNavigate } from '#/lib/use-app-navigate'
+import { createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Award, CircleSlash, ScrollText } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/q
 })
 
 function RouteComponent() {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
   const { questId, storyId } = Route.useParams()
   const questQuery = useQuestQuery(questId)
   const quest = questQuery.data?.quest

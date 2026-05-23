@@ -29,6 +29,7 @@ import {
   useStorySessionQuery,
   useUpdateStoryStatusMutation,
 } from '#/modules/story-flow/story-api-client'
+import { useAppNavigate } from '#/lib/use-app-navigate'
 import type {
   PersistedQuest,
   PersistedStory,
@@ -58,7 +59,7 @@ export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/'
 })
 
 function RouteComponent() {
-  const navigate = Route.useNavigate()
+  const navigate = useAppNavigate()
   const { storyId } = Route.useParams()
   const sessionQuery = useStorySessionQuery(storyId)
   const session = sessionQuery.data
@@ -233,7 +234,7 @@ function StoryBlurbDialog({ story }: { story: PersistedStory }) {
 }
 
 function StoryLifecycleMenu({ story }: { story: PersistedStory }) {
-  const navigate = Route.useNavigate()
+  const navigate = useAppNavigate()
   const updateStatus = useUpdateStoryStatusMutation()
   const deleteStory = useDeleteStoryMutation()
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)

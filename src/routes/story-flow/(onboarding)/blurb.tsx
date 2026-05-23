@@ -8,6 +8,7 @@ import {
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { useCreateStoryMutation } from '#/modules/story-flow/story-api-client'
 import { useOnboardingStore } from '#/state/onboarding'
+import { useAppNavigate } from '#/lib/use-app-navigate'
 import { createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, ScrollText } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -19,9 +20,7 @@ export const Route = createFileRoute('/story-flow/(onboarding)/blurb')({
 })
 
 function RouteComponent() {
-  // Bind navigation to this file route. The global hook did not reliably
-  // resolve the post-create transition across the pathless route groups.
-  const navigate = Route.useNavigate()
+  const navigate = useAppNavigate()
   const rawName = useOnboardingStore((state) => state.name)
   const rawGoal = useOnboardingStore((state) => state.goal)
   const rawChallenge = useOnboardingStore((state) => state.mainProblem)

@@ -14,8 +14,9 @@ import {
   useCompleteQuestMutation,
   useQuestQuery,
 } from '#/modules/story-flow/story-api-client'
+import { useAppNavigate } from '#/lib/use-app-navigate'
 import type { QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import {
   ArrowLeft,
   Check,
@@ -38,7 +39,7 @@ export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/q
 })
 
 function RouteComponent() {
-  const navigate = useNavigate()
+  const navigate = useAppNavigate()
   const { questId, storyId } = Route.useParams()
   const questQuery = useQuestQuery(questId)
   const completeQuest = useCompleteQuestMutation()

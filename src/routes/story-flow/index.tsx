@@ -12,6 +12,7 @@ import {
 import { useStoriesQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
 import { continueAnonymously } from '#/lib/supabase-auth'
+import { useAppNavigate } from '#/lib/use-app-navigate'
 import { useAuthStore } from '#/state/auth'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute } from '@tanstack/react-router'
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/story-flow/')({
 })
 
 function RouteComponent() {
-  const navigate = Route.useNavigate()
+  const navigate = useAppNavigate()
   const user = useAuthStore((state) => state.user)
   const authIsLoading = useAuthStore((state) => state.isLoading)
   const isExplicitlySignedOut = useAuthStore((state) => state.isExplicitlySignedOut)
@@ -249,7 +250,7 @@ function StoryList({ stories }: { stories: PersistedStory[] }) {
 }
 
 function StoryRow({ story }: { story: PersistedStory }) {
-  const navigate = Route.useNavigate()
+  const navigate = useAppNavigate()
 
   return (
     <StorySurface className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-3">

@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { useAppNavigate } from '#/lib/use-app-navigate';
 import { useOnboardingStore } from '#/state/onboarding';
 import { useShallow } from 'zustand/react/shallow';
 import { OnboardingShell } from '#/components/story-flow/onboarding-shell';
@@ -11,7 +12,7 @@ export const Route = createFileRoute('/story-flow/(onboarding)/problem')({
 })
 
 function RouteComponent() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [challenge, setChallenge] = useOnboardingStore(useShallow(state => [state.mainProblem, state.setMainProblem]));
 
   return (

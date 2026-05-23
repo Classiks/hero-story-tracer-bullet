@@ -1,9 +1,10 @@
 import { OnboardingShell } from '#/components/story-flow/onboarding-shell';
 import { OnboardingStepForm } from '#/components/story-flow/onboarding-step-form';
 import { StoryCopy, StoryHeading } from '#/components/story-flow/story-primitives';
+import { useAppNavigate } from '#/lib/use-app-navigate';
 import { useOnboardingStore } from '#/state/onboarding'
 import { useShallow } from "zustand/react/shallow";
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { Route as NextStepRoute } from "#/routes/story-flow/(onboarding)/goal";
 
 export const Route = createFileRoute('/story-flow/(onboarding)/name')({
@@ -11,7 +12,7 @@ export const Route = createFileRoute('/story-flow/(onboarding)/name')({
 })
 
 function RouteComponent() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [name, setName] = useOnboardingStore(useShallow(state => [state.name, state.setName]));
 
   return (
