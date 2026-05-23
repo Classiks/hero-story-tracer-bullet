@@ -33,13 +33,14 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  ClipboardCheck,
   Loader2,
   RefreshCw,
   ScrollText,
   Sparkles,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as FeedbackRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/$questId/feedback'
 
@@ -309,7 +310,7 @@ function QuestPresentation({ onQuestRejected, quest }: {
   return (
     <div className="mt-10 pb-5">
       <StoryHeading
-        className="mt-7"
+        className="mt-6"
         compact
         size="page"
         initial={{ opacity: 0, y: 20 }}
@@ -319,46 +320,93 @@ function QuestPresentation({ onQuestRejected, quest }: {
       </StoryHeading>
 
       <StorySurface
-        className="mt-6 p-5"
+        className="mt-6 border-accent/30 bg-accent/10 p-5 shadow-[0_0_46px_color-mix(in_srgb,var(--accent)_14%,transparent)]"
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.06 }}
       >
-        <p className="text-base leading-relaxed text-foreground/85">{quest.quest.content}</p>
+        <div className="flex items-start gap-3">
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/15 text-accent">
+            <ClipboardCheck className="size-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+              Real-world step
+            </p>
+            <p className="mt-3 text-xl font-semibold leading-snug text-foreground">
+              {quest.recommendedTask.task}
+            </p>
+          </div>
+        </div>
       </StorySurface>
 
       <StorySurface
-        className="mt-4 border-accent/25 bg-accent/10 p-5"
+        className="mt-4 p-5"
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent">
-          Action
-        </p>
-        <p className="mt-3 text-lg font-semibold leading-snug text-foreground">
-          {quest.quest.action}
-        </p>
+        <div className="flex items-start gap-3">
+          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <ScrollText className="size-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Story framing
+            </p>
+            <p className="mt-3 text-base leading-relaxed text-foreground/85">{quest.quest.content}</p>
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-border/60 pt-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+            In-story action
+          </p>
+          <p className="mt-2 text-base font-semibold leading-snug text-foreground">
+            {quest.quest.action}
+          </p>
+        </div>
       </StorySurface>
 
-      <div className="mt-6 flex items-center gap-3">
-        <Button
-          className="flex-1"
-          disabled={acceptQuest.isPending}
-          onClick={handleAcceptQuest}
-          size="hero"
-          variant="hero"
-        >
-          {acceptQuest.isPending ? <Loader2 className="animate-spin" /> : <Check />}
-          Accept
-        </Button>
+      <Button
+        className="mt-6 w-full"
+        disabled={acceptQuest.isPending}
+        onClick={handleAcceptQuest}
+        size="hero"
+        variant="hero"
+      >
+        {acceptQuest.isPending ? <Loader2 className="animate-spin" /> : <Check />}
+        Accept quest
+      </Button>
 
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <RejectQuestDialog
           onRejected={onQuestRejected}
           quest={quest}
+          trigger={
+            <Button
+              className="w-full"
+              disabled={acceptQuest.isPending}
+              size="hero"
+              type="button"
+              variant="outline"
+              sound={false}
+            >
+              <RefreshCw />
+              Try another
+            </Button>
+          }
         />
 
-        <QuestReasonDialog quest={quest} tooltipLabel="Why this quest" />
+        <QuestReasonDialog
+          quest={quest}
+          trigger={
+            <Button className="w-full" size="hero" type="button" variant="outline" sound={false}>
+              <Sparkles />
+              Why this
+            </Button>
+          }
+        />
       </div>
     </div>
   )
@@ -369,9 +417,11 @@ const REJECTION_REASONS = ['Not relevant', 'Too big', 'Bad timing', 'Unclear', '
 function RejectQuestDialog({
   onRejected,
   quest,
+  trigger,
 }: {
   onRejected: () => void
   quest: PersistedQuest
+  trigger?: ReactNode
 }) {
   const rejectQuest = useRejectQuestMutation()
   const [open, setOpen] = useState(false)
@@ -414,28 +464,32 @@ function RejectQuestDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button
-              aria-label="Try another quest"
-              disabled={rejectQuest.isPending}
-              size="hero-icon"
-              variant="outline"
-              sound={false}
-            >
-              {rejectQuest.isPending ? (
-                <Loader2 className="animate-spin" />
-              ) : (
-                <RefreshCw />
-              )}
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Try another quest</p>
-        </TooltipContent>
-      </Tooltip>
+      {trigger ? (
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button
+                aria-label="Try another quest"
+                disabled={rejectQuest.isPending}
+                size="hero-icon"
+                variant="outline"
+                sound={false}
+              >
+                {rejectQuest.isPending ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <RefreshCw />
+                )}
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Try another quest</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Try a different quest?</DialogTitle>

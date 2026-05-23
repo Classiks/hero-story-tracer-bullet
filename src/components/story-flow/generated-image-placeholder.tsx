@@ -26,7 +26,7 @@ export function GeneratedImagePlaceholder({
 
     const timer = window.setInterval(() => {
       setMessageIndex((current) => (current + 1) % pendingMessages.length)
-    }, 1900)
+    }, 4800)
 
     return () => window.clearInterval(timer)
   }, [error])
