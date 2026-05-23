@@ -18,6 +18,9 @@ create table if not exists public.stories (
   updated_at timestamptz not null default now()
 );
 
+comment on column public.stories.status is
+  'Completed is intentionally retained for future story-end semantics; the current UI treats completed stories as archived.';
+
 create table if not exists public.quests (
   id uuid primary key default gen_random_uuid(),
   story_id uuid not null references public.stories(id) on delete cascade,

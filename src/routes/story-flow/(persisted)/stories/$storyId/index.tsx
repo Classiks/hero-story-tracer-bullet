@@ -11,6 +11,13 @@ import {
   DialogTrigger,
 } from '#/components/ui/dialog'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
+import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
@@ -34,14 +41,15 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
-  Check,
   ImageIcon,
   Loader2,
+  MoreHorizontal,
   RotateCcw,
   ScrollText,
   Trash2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 
 export const Route = createFileRoute('/story-flow/(persisted)/stories/$storyId/')({
@@ -63,7 +71,11 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <StoryRouteHeader>Story progress</StoryRouteHeader>
+          <StoryRouteHeader
+            actions={session ? <StoryLifecycleMenu story={session.story} /> : undefined}
+          >
+            Story progress
+          </StoryRouteHeader>
 
           {sessionQuery.isPending && <HubLoading />}
 
@@ -120,17 +132,13 @@ function RouteComponent() {
               ) : (
                 <StorySurface className="mt-6 p-4">
                   <p className="text-sm font-semibold text-foreground">
-                    {session.story.status === 'completed'
-                      ? 'This story is complete.'
-                      : 'This story is archived.'}
+                    This story is archived.
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     Restore it to active if you want to continue adding quests.
                   </p>
                 </StorySurface>
               )}
-
-              <StoryLifecycleControls story={session.story} />
 
               <StorySoFar
                 nextAction={session.progress.nextAction}
@@ -226,106 +234,104 @@ function StoryBlurbDialog({ story }: { story: PersistedStory }) {
   )
 }
 
-function StoryLifecycleControls({ story }: { story: PersistedStory }) {
+function StoryLifecycleMenu({ story }: { story: PersistedStory }) {
   const navigate = Route.useNavigate()
   const updateStatus = useUpdateStoryStatusMutation()
   const deleteStory = useDeleteStoryMutation()
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const isBusy = updateStatus.isPending || deleteStory.isPending
+  const storyIsActive = story.status === 'active'
+  const errorMessage = updateStatus.isError
+    ? 'The story status could not be updated. Try again.'
+    : deleteStory.isError
+      ? 'The story could not be deleted. Try again.'
+      : null
 
   function updateStoryStatus(status: StoryStatus) {
     updateStatus.mutate({ status, storyId: story.id })
   }
 
   return (
-    <StorySurface className="mt-5 p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Story status
-          </p>
-          <p className="mt-1 text-sm font-semibold capitalize text-foreground">{story.status}</p>
-        </div>
-        {updateStatus.isPending && <Loader2 className="size-5 animate-spin text-muted-foreground" />}
-      </div>
-
-      {updateStatus.isError && (
-        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
-          The story status could not be updated. Try again.
-        </p>
-      )}
-
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        {story.status === 'active' ? (
-          <>
-            <Button
-              disabled={updateStatus.isPending}
-              onClick={() => updateStoryStatus('completed')}
-              size="sm"
-              variant="outline"
-            >
-              <Check />
-              Complete
-            </Button>
-            <Button
-              disabled={updateStatus.isPending}
-              onClick={() => updateStoryStatus('archived')}
-              size="sm"
-              variant="outline"
-            >
-              <Archive />
-              Archive
-            </Button>
-          </>
-        ) : (
+    <div className="relative flex shrink-0">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button
-            className="sm:col-span-2"
-            disabled={updateStatus.isPending}
-            onClick={() => updateStoryStatus('active')}
-            size="sm"
+            aria-label="Story actions"
+            disabled={isBusy}
+            size="icon-sm"
             variant="outline"
           >
-            <RotateCcw />
-            Restore
+            {isBusy ? <Loader2 className="animate-spin" /> : <MoreHorizontal />}
           </Button>
-        )}
-        <DeleteStoryDialog
-          isDeleting={deleteStory.isPending}
-          onDelete={() => {
-            deleteStory.mutate(story.id, {
-              onSuccess: () => {
-                void navigate({ to: LandingRoute.to })
-              },
-            })
-          }}
-          storyTitle={story.blueprint.title}
-        />
-      </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          {storyIsActive ? (
+            <DropdownMenuItem
+              disabled={updateStatus.isPending}
+              onSelect={() => updateStoryStatus('archived')}
+            >
+              <Archive />
+              Archive story
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              disabled={updateStatus.isPending}
+              onSelect={() => updateStoryStatus('active')}
+            >
+              <RotateCcw />
+              Restore story
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={deleteStory.isPending}
+            onSelect={() => setDeleteDialogOpen(true)}
+            variant="destructive"
+          >
+            <Trash2 />
+            Delete story
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      {deleteStory.isError && (
-        <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-foreground">
-          The story could not be deleted. Try again.
+      <DeleteStoryDialog
+        isDeleting={deleteStory.isPending}
+        onDelete={() => {
+          deleteStory.mutate(story.id, {
+            onSuccess: () => {
+              void navigate({ to: LandingRoute.to })
+            },
+          })
+        }}
+        onOpenChange={setDeleteDialogOpen}
+        open={deleteDialogOpen}
+        storyTitle={story.blueprint.title}
+      />
+
+      {errorMessage && (
+        <p className="absolute right-0 top-full z-50 mt-2 w-64 rounded-lg border border-destructive/30 bg-popover p-3 text-right text-sm text-foreground shadow-md">
+          {errorMessage}
         </p>
       )}
-    </StorySurface>
+    </div>
   )
 }
 
 function DeleteStoryDialog({
   isDeleting,
   onDelete,
+  onOpenChange,
+  open,
   storyTitle,
 }: {
   isDeleting: boolean
   onDelete: () => void
+  onOpenChange: (open: boolean) => void
+  open: boolean
   storyTitle: string
 }) {
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button className="sm:col-span-2" disabled={isDeleting} size="sm" variant="destructive">
-          {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
-          Delete story
-        </Button>
-      </DialogTrigger>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Delete this story?</DialogTitle>
@@ -348,7 +354,6 @@ function DeleteStoryDialog({
     </Dialog>
   )
 }
-
 function StorySoFar({
   nextAction,
   storyBeats,

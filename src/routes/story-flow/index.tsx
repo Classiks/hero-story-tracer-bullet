@@ -32,8 +32,7 @@ function RouteComponent() {
   const resetOnboarding = useOnboardingStore((state) => state.reset)
   const stories = storiesQuery.data?.stories ?? []
   const activeStories = stories.filter((story) => story.status === 'active')
-  const completedStories = stories.filter((story) => story.status === 'completed')
-  const archivedStories = stories.filter((story) => story.status === 'archived')
+  const archivedStories = stories.filter((story) => story.status !== 'active')
 
   const startStory = () => {
     resetOnboarding()
@@ -105,18 +104,14 @@ function RouteComponent() {
                 ) : (
                   <StorySurface className="mt-3 p-4">
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      No active stories right now. Restore an archived or completed story, or start a new one.
+                      No active stories right now. Restore an archived story, or start a new one.
                     </p>
                   </StorySurface>
                 )}
               </section>
 
-              {completedStories.length > 0 && (
-                <StorySection heading="Completed stories" stories={completedStories} />
-              )}
-
               {archivedStories.length > 0 && (
-                <StorySection heading="Archived stories" stories={archivedStories} />
+                <StorySection heading="Archive" stories={archivedStories} />
               )}
             </div>
           )}
