@@ -4,11 +4,41 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
 const pendingMessages = [
-  'Generating your image...',
-  'Drawing the vision...',
-  'Painting the scene...',
-  'Adding the final glow...',
+  'Summoning the scene from the page...',
+  'Turning prose into pixels...',
+  'Sketching between the lines...',
+  'Letting the story find its colors...',
+  'Composing the next visual beat...',
+  'Warming up the imagination engine...',
+  'Gathering light, shadow, and a little drama...',
+  'Giving the scene its first breath...',
+  'Painting what the words implied...',
+  'Finding the mood behind the moment...',
+  'Threading atmosphere into the frame...',
+  'Shaping characters out of the mist...',
+  'Mixing ink, color, and narrative tension...',
+  'Framing the scene just right...',
+  'Coaxing the image out of the story...',
+  'Adding texture to the tale...',
+  'Bringing the paragraph into focus...',
+  'Polishing the visual subplot...',
+  'Letting the scene step onto the stage...',
+  'Rendering the unwritten details...',
 ]
+
+function getRandomMessageIndex(currentIndex: number) {
+  if (pendingMessages.length <= 1) {
+    return 0
+  }
+
+  let nextIndex = currentIndex
+
+  while (nextIndex === currentIndex) {
+    nextIndex = Math.floor(Math.random() * pendingMessages.length)
+  }
+
+  return nextIndex
+}
 
 export function GeneratedImagePlaceholder({
   className,
@@ -17,7 +47,9 @@ export function GeneratedImagePlaceholder({
   className?: string
   error?: boolean
 }) {
-  const [messageIndex, setMessageIndex] = useState(0)
+  const [messageIndex, setMessageIndex] = useState(() =>
+    Math.floor(Math.random() * pendingMessages.length),
+  )
 
   useEffect(() => {
     if (error) {
@@ -25,7 +57,7 @@ export function GeneratedImagePlaceholder({
     }
 
     const timer = window.setInterval(() => {
-      setMessageIndex((current) => (current + 1) % pendingMessages.length)
+      setMessageIndex((current) => getRandomMessageIndex(current))
     }, 4800)
 
     return () => window.clearInterval(timer)
