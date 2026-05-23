@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/quests/$questId/complete')({
     handlers: {
       POST: async ({ params, request }) => {
         try {
-          const { supabase, user } = await requireSupabaseUser(request)
+          const { supabase } = await requireSupabaseUser(request)
           const input = await request.json()
 
           if (!isQuestOutcomeStatus(input.outcomeStatus) || input.outcomeStatus === 'rejected') {
@@ -32,7 +32,6 @@ export const Route = createFileRoute('/api/quests/$questId/complete')({
             outcomeStatus: input.outcomeStatus,
             questId: params.questId,
             supabase,
-            userId: user.id,
           })
 
           return Response.json({ quest })

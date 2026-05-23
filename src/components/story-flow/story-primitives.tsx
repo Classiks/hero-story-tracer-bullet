@@ -168,3 +168,28 @@ export function StorySurface({
     />
   )
 }
+
+export function StoryLoadingEmblem({
+  children,
+  className,
+  glow = true,
+  ...props
+}: MotionDivProps & {
+  glow?: boolean
+}) {
+  return (
+    <motion.div
+      aria-hidden="true"
+      className={cn(
+        'mx-auto grid size-28 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent',
+        glow && 'shadow-[0_0_42px_color-mix(in_srgb,var(--accent)_22%,transparent)]',
+        className,
+      )}
+      animate={{ rotate: 360, scale: [1, 1.04, 1] }}
+      transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  )
+}

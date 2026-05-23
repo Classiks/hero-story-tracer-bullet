@@ -15,6 +15,7 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
+  StoryLoadingEmblem,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
@@ -181,14 +182,9 @@ function QuestLoading({
 
   return (
     <div className="mt-12">
-      <motion.div
-        aria-hidden="true"
-        className="mx-auto grid size-28 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent"
-        animate={{ rotate: 360, scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-      >
+      <StoryLoadingEmblem glow={false}>
         <ScrollText className="size-9" />
-      </motion.div>
+      </StoryLoadingEmblem>
       <StoryHeading compact size="page">
         {copy.heading}
       </StoryHeading>

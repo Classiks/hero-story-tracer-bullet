@@ -53,6 +53,33 @@ export function useStoryQuery(storyId: string | undefined) {
   })
 }
 
+export function useGenerateStoryImageMutation(storyId: string | undefined) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!storyId) {
+        throw new Error('storyId is required')
+      }
+
+      const response = await authenticatedFetch(`/api/stories/${storyId}/image`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to generate story image'))
+      }
+
+      return (await response.json()) as StoryResponse
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['persisted-story', data.story.id], data)
+      void queryClient.invalidateQueries({ queryKey: ['persisted-stories'] })
+      void queryClient.invalidateQueries({ queryKey: ['story-session', data.story.id] })
+    },
+  })
+}
+
 export function useUpdateStoryStatusMutation() {
   const queryClient = useQueryClient()
 
@@ -212,6 +239,32 @@ export function useCompleteQuestMutation() {
 
       if (!response.ok) {
         throw new Error(await readError(response, 'Failed to complete quest'))
+      }
+
+      return (await response.json()) as QuestResponse
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['persisted-quest', data.quest.id], data)
+      void queryClient.invalidateQueries({ queryKey: ['story-session', data.quest.storyId] })
+    },
+  })
+}
+
+export function useGenerateQuestResultImageMutation(questId: string | undefined) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!questId) {
+        throw new Error('questId is required')
+      }
+
+      const response = await authenticatedFetch(`/api/quests/${questId}/result-image`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to generate quest result image'))
       }
 
       return (await response.json()) as QuestResponse

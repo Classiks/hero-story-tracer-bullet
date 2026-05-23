@@ -2,7 +2,7 @@ import { Button } from '#/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '#/components/ui/tooltip'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { useNavigate } from '@tanstack/react-router'
-import { Library } from 'lucide-react'
+import { Home } from 'lucide-react'
 
 import { StoryKicker } from './story-primitives'
 
@@ -23,7 +23,7 @@ export function StoryRouteHeader({ children }: { children: ReactNode }) {
             size="icon-sm"
             variant="outline"
           >
-            <Library className="size-4" />
+            <Home className="size-4" />
           </Button>
         </TooltipTrigger>
         <TooltipContent>

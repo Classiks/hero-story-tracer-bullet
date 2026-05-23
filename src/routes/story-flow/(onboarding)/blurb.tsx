@@ -1,10 +1,15 @@
 import { Button } from '#/components/ui/button'
-import { StoryCopy, StoryFrame, StoryHeading } from '#/components/story-flow/story-primitives'
+import {
+  StoryCopy,
+  StoryFrame,
+  StoryHeading,
+  StoryLoadingEmblem,
+} from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { useCreateStoryMutation } from '#/modules/story-flow/story-api-client'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ScrollText } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { Route as StartRoute } from '#/routes/story-flow/(onboarding)/name'
@@ -104,18 +109,15 @@ function RouteComponent() {
 function StoryLoading({ name }: { name: string }) {
   return (
     <div className="mt-12">
-      <motion.div
-        aria-hidden="true"
-        className="mx-auto size-28 rounded-full border border-accent/20 bg-accent/10"
-        animate={{ rotate: 360, scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-      />
-      <StoryHeading accent="the chronicle." compact>
-        Forging
+      <StoryLoadingEmblem>
+        <ScrollText className="size-9" />
+      </StoryLoadingEmblem>
+      <StoryHeading compact size="page">
+        Forging your chronicle
       </StoryHeading>
       <StoryCopy wide>
-        The narrator is turning {name} into a hero, the goal into a quest, and
-        the challenge into something that can be faced.
+        The narrator is reading the path ahead for {name}, turning the goal
+        into a quest, and shaping the challenge into something that can be faced.
       </StoryCopy>
     </div>
   )

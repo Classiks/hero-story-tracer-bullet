@@ -35,7 +35,7 @@ export async function readMockData<T extends ZodType>(schema: T, schemaId: strin
 }
 
 export async function readMockImage() {
-  await delay(1200)
+  await delay(1600)
   const mockPath = join(process.cwd(), 'mocks', 'image.txt')
   return (await readFile(mockPath, 'utf8')).trim()
 }

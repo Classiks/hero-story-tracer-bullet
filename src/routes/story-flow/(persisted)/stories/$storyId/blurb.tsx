@@ -6,11 +6,12 @@ import {
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
-import { useStoryQuery } from '#/modules/story-flow/story-api-client'
+import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-image-placeholder'
+import { useGenerateStoryImageMutation, useStoryQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ImageIcon, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
@@ -110,11 +111,24 @@ function StoryLoading() {
 
 function StoryPresentation({ story }: { story: PersistedStory }) {
   const navigate = useNavigate()
+  const generateStoryImage = useGenerateStoryImageMutation(story.id)
   const blueprint = story.blueprint
+  const imageMissing = !story.storyImageUrl
+  const { isError: imageError, isIdle: imageIdle, mutate: generateImage } = generateStoryImage
+
+  useEffect(() => {
+    if (imageMissing && imageIdle) {
+      generateImage()
+    }
+  }, [generateImage, imageIdle, imageMissing])
 
   return (
     <div className="mt-10 pb-5">
-      <StoryImageBanner imageUrl={story.storyImageUrl} title={blueprint.title} />
+      <StoryImageBanner
+        imageError={imageError}
+        imageUrl={story.storyImageUrl}
+        title={blueprint.title}
+      />
 
       <StoryHeading
         className="mt-7"
@@ -146,7 +160,6 @@ function StoryPresentation({ story }: { story: PersistedStory }) {
 
       <Button
         className="mt-10 w-full"
-        disabled={!story.storyImageUrl}
         onClick={() =>
           navigate({
             params: { storyId: story.id },
@@ -162,7 +175,15 @@ function StoryPresentation({ story }: { story: PersistedStory }) {
   )
 }
 
-function StoryImageBanner({ imageUrl, title }: { imageUrl: string | null; title: string }) {
+function StoryImageBanner({
+  imageError,
+  imageUrl,
+  title,
+}: {
+  imageError: boolean
+  imageUrl: string | null
+  title: string
+}) {
   return (
     <StorySurface
       className="-mx-2 overflow-hidden bg-background/65"
@@ -170,10 +191,7 @@ function StoryImageBanner({ imageUrl, title }: { imageUrl: string | null; title:
       animate={{ opacity: 1, y: 0 }}
     >
       {!imageUrl && (
-        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-muted-foreground">
-          <ImageIcon className="size-9 text-accent" />
-          <p>The banner is taking shape.</p>
-        </div>
+        <GeneratedImagePlaceholder error={imageError} />
       )}
 
       {imageUrl && (

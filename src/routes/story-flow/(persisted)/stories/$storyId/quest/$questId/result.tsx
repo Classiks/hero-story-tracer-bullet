@@ -4,14 +4,17 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
+  StoryLoadingEmblem,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
+import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-image-placeholder'
 import { questOutcomeSucceeded, type QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
-import { useQuestQuery } from '#/modules/story-flow/story-api-client'
+import { useGenerateQuestResultImageMutation, useQuestQuery } from '#/modules/story-flow/story-api-client'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, Award, CircleSlash, Flame, ScrollText, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Award, CircleSlash, ScrollText, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 import { Route as NextRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/proposal'
@@ -28,6 +31,15 @@ function RouteComponent() {
   const outcomeStatus = quest?.outcomeStatus
   const outcomeSucceeded = outcomeStatus ? questOutcomeSucceeded(outcomeStatus) : false
   const note = quest?.feedback.note?.trim()
+  const generateResultImage = useGenerateQuestResultImageMutation(questId)
+  const imageMissing = Boolean(quest?.resultText && !quest.resultImageUrl)
+  const { isError: imageError, isIdle: imageIdle, mutate: generateImage } = generateResultImage
+
+  useEffect(() => {
+    if (imageMissing && imageIdle) {
+      generateImage()
+    }
+  }, [generateImage, imageIdle, imageMissing])
 
   return (
     <StoryFrame>
@@ -73,6 +85,7 @@ function RouteComponent() {
             <ResultStatusCard outcomeStatus={outcomeStatus} />
 
             <QuestResultImage
+              imageError={imageError}
               imageUrl={quest.resultImageUrl}
               title={quest.resultText.title}
             />
@@ -139,14 +152,9 @@ function QuestResultLoading({ outcomeStatus }: { outcomeStatus: QuestOutcomeStat
 
   return (
     <div className="mt-12">
-      <motion.div
-        aria-hidden="true"
-        className="mx-auto grid size-28 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent shadow-[0_0_42px_color-mix(in_srgb,var(--accent)_22%,transparent)]"
-        animate={{ rotate: 360, scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-      >
+      <StoryLoadingEmblem>
         <ScrollText className="size-9" />
-      </motion.div>
+      </StoryLoadingEmblem>
       <motion.div
         className="mt-7 flex justify-center"
         animate={{ opacity: [0.45, 1, 0.45] }}
@@ -237,7 +245,15 @@ function FeedbackNote({ note }: { note: string }) {
   )
 }
 
-function QuestResultImage({ imageUrl, title }: { imageUrl: string | null; title: string }) {
+function QuestResultImage({
+  imageError,
+  imageUrl,
+  title,
+}: {
+  imageError: boolean
+  imageUrl: string | null
+  title: string
+}) {
   return (
     <StorySurface
       className="-mx-2 overflow-hidden bg-background/65"
@@ -246,10 +262,7 @@ function QuestResultImage({ imageUrl, title }: { imageUrl: string | null; title:
       transition={{ delay: 0.05 }}
     >
       {!imageUrl && (
-        <div className="flex aspect-video flex-col items-center justify-center gap-4 px-8 text-center text-muted-foreground">
-          <Flame className="size-9 text-primary" />
-          <p>The story beat is ready, but the scene could not be drawn.</p>
-        </div>
+        <GeneratedImagePlaceholder error={imageError} />
       )}
 
       {imageUrl && (
