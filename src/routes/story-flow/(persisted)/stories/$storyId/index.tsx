@@ -18,10 +18,10 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import {
-  StoryCopy,
   StoryFrame,
   StoryHeading,
   StorySurface,
+  StoryWaitState,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import {
@@ -155,20 +155,17 @@ function RouteComponent() {
 
 function HubLoading() {
   return (
-    <div className="mt-12">
-      <motion.div
-        aria-hidden="true"
-        className="mx-auto grid size-28 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent"
-        animate={{ rotate: 360, scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-      >
-        <ScrollText className="size-9" />
-      </motion.div>
-      <StoryHeading accent="path." compact>
-        Reading
-      </StoryHeading>
-      <StoryCopy wide>The narrator is opening the current story path.</StoryCopy>
-    </div>
+    <StoryWaitState
+      body="The narrator is opening the current story path."
+      heading="Reading"
+      headingAccent="path."
+      icon={<ScrollText className="size-9" />}
+      messages={[
+        'Finding the latest page...',
+        'Gathering the open quests...',
+        'Reading the marks of progress...',
+      ]}
+    />
   )
 }
 
@@ -371,7 +368,7 @@ function StorySoFar({
       {storyBeats.length ? (
         <div className="mt-4 grid gap-5">
           {storyBeats.map((quest, index) => (
-            <StoryComicPanel key={quest.id} pageNumber={index + 1} quest={quest} />
+            <StoryComicPanel index={index} key={quest.id} pageNumber={index + 1} quest={quest} />
           ))}
         </div>
       ) : (
@@ -382,9 +379,11 @@ function StorySoFar({
 }
 
 function StoryComicPanel({
+  index,
   pageNumber,
   quest,
 }: {
+  index: number
   pageNumber: number
   quest: PersistedQuest
 }) {
@@ -399,6 +398,7 @@ function StoryComicPanel({
       className="overflow-hidden rounded-2xl border-2 border-foreground/20 bg-background shadow-[6px_6px_0_color-mix(in_srgb,var(--foreground)_12%,transparent)]"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.04, 0.16) }}
     >
       <div className="border-b-2 border-foreground/15 bg-card">
         {quest.resultImageUrl ? (

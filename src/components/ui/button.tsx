@@ -1,9 +1,14 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { motion } from "framer-motion"
 import { Slot } from "radix-ui"
 
 import { cn } from "#/lib/utils.ts"
 import { playSoundEffect } from "#/lib/sound-effects.ts"
+
+const MotionButton = motion.button as React.ComponentType<
+  React.ComponentProps<"button"> & { whileTap?: { scale: number } }
+>
 
 const buttonVariants = cva(
   [
@@ -68,15 +73,20 @@ function Button({
   onClick,
   onKeyDown,
   onPointerDown,
+  pressMotion = false,
+  pressScale,
   sound,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    pressMotion?: boolean
+    pressScale?: number
     sound?: false | "click"
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  const Comp = asChild ? Slot.Root : pressMotion ? MotionButton : "button"
   const resolvedSound = sound ?? (variant === "link" ? false : "click")
+  const resolvedPressScale = pressScale ?? (size === "hero-icon" ? 0.94 : 0.98)
 
   function shouldPlaySound(event: React.SyntheticEvent<HTMLButtonElement>) {
     const ariaDisabled = event.currentTarget.getAttribute("aria-disabled") === "true"
@@ -113,6 +123,7 @@ function Button({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       onPointerDown={handlePointerDown}
+      {...(!asChild && pressMotion && !disabled ? { whileTap: { scale: resolvedPressScale } } : {})}
       {...props}
     />
   )

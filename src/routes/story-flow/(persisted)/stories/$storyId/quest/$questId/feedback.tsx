@@ -1,6 +1,7 @@
 import { Button } from '#/components/ui/button'
 import { InputDepthMeter } from '#/components/story-flow/input-depth-meter'
 import { QuestRealityTaskCard } from '#/components/story-flow/quest-context'
+import { RotatingLoadingText } from '#/components/story-flow/rotating-loading-text'
 import {
   StoryCopy,
   StoryFrame,
@@ -99,12 +100,14 @@ function RouteComponent() {
               <div className="grid gap-3">
                 <QuestSummaryItem
                   icon={<ScrollText className="size-5" />}
+                  index={0}
                   label="Quest"
                   value={quest.quest.quest}
                 />
                 <QuestSummaryItem
                   accent
                   icon={<Swords className="size-5" />}
+                  index={1}
                   label="Action"
                   value={quest.quest.action}
                 />
@@ -160,6 +163,29 @@ function RouteComponent() {
               </div>
             )}
 
+            {completeQuest.isPending && (
+              <StorySurface className="mt-5 border-accent/25 bg-accent/10 p-4">
+                <div className="flex items-start gap-3">
+                  <motion.div
+                    className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent"
+                    animate={{ scale: [1, 1.08, 1], rotate: [0, -3, 3, 0] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <ScrollText className="size-5" />
+                  </motion.div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      Writing the result...
+                    </p>
+                    <RotatingLoadingText
+                      className="mt-1 text-sm font-medium leading-relaxed text-muted-foreground"
+                      messages={questResultWritingMessages}
+                    />
+                  </div>
+                </div>
+              </StorySurface>
+            )}
+
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Mark quest
@@ -167,8 +193,11 @@ function RouteComponent() {
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <Button
+                className="w-full"
                 disabled={completeQuest.isPending}
                 onClick={() => complete('completed')}
+                pressMotion
+                pressScale={0.97}
                 size="hero"
                 variant="hero"
               >
@@ -176,8 +205,11 @@ function RouteComponent() {
                 Complete
               </Button>
               <Button
+                className="w-full"
                 disabled={completeQuest.isPending}
                 onClick={() => complete('unresolved')}
+                pressMotion
+                pressScale={0.97}
                 size="hero"
                 variant="outline"
               >
@@ -192,19 +224,34 @@ function RouteComponent() {
   )
 }
 
+const questResultWritingMessages = [
+  'Turning your outcome into a story beat...',
+  'Letting the narrator weigh what changed...',
+  'Shaping the next page of the chronicle...',
+  'Finding the signal in your feedback...',
+  'Writing the consequence of this quest...',
+]
+
 function QuestSummaryItem({
   accent = false,
   icon,
+  index,
   label,
   value,
 }: {
   accent?: boolean
   icon: React.ReactNode
+  index: number
   label: string
   value: string
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/35 p-3">
+    <motion.div
+      className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/35 p-3"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.06 + index * 0.05 }}
+    >
       <div
         className={
           accent
@@ -226,7 +273,7 @@ function QuestSummaryItem({
         </p>
         <p className="mt-1 text-sm font-semibold leading-snug text-foreground">{value}</p>
       </div>
-    </div>
+    </motion.div>
   )
 }
 

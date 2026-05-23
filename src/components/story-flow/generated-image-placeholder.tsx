@@ -1,7 +1,7 @@
 import { cn } from '#/lib/utils'
 import { ImageIcon, Sparkles } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { RotatingLoadingText } from '#/components/story-flow/rotating-loading-text'
 
 const pendingMessages = [
   'Summoning the scene from the page...',
@@ -26,20 +26,6 @@ const pendingMessages = [
   'Rendering the unwritten details...',
 ]
 
-function getRandomMessageIndex(currentIndex: number) {
-  if (pendingMessages.length <= 1) {
-    return 0
-  }
-
-  let nextIndex = currentIndex
-
-  while (nextIndex === currentIndex) {
-    nextIndex = Math.floor(Math.random() * pendingMessages.length)
-  }
-
-  return nextIndex
-}
-
 export function GeneratedImagePlaceholder({
   className,
   error = false,
@@ -47,22 +33,6 @@ export function GeneratedImagePlaceholder({
   className?: string
   error?: boolean
 }) {
-  const [messageIndex, setMessageIndex] = useState(() =>
-    Math.floor(Math.random() * pendingMessages.length),
-  )
-
-  useEffect(() => {
-    if (error) {
-      return
-    }
-
-    const timer = window.setInterval(() => {
-      setMessageIndex((current) => getRandomMessageIndex(current))
-    }, 4800)
-
-    return () => window.clearInterval(timer)
-  }, [error])
-
   return (
     <div
       className={cn(
@@ -108,18 +78,7 @@ export function GeneratedImagePlaceholder({
             </p>
           </>
         ) : (
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={pendingMessages[messageIndex]}
-              className="font-semibold text-foreground"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.24 }}
-            >
-              {pendingMessages[messageIndex]}
-            </motion.p>
-          </AnimatePresence>
+          <RotatingLoadingText messages={pendingMessages} />
         )}
       </div>
     </div>

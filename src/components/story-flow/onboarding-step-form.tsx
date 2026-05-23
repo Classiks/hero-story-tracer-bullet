@@ -2,7 +2,6 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { InputDepthMeter, type DepthMeterOptions } from '#/components/story-flow/input-depth-meter'
 import { Textarea } from '#/components/ui/textarea'
-import { motion } from 'framer-motion'
 import { Send } from 'lucide-react'
 
 import type { ReactNode } from 'react'
@@ -52,17 +51,16 @@ export function OnboardingStepForm({
             value={value}
             onChange={(event) => onChange(event.target.value)}
           />
-          <motion.div whileTap={{ scale: 0.94 }}>
-            <Button
-              aria-label="Continue"
-              disabled={!canContinue}
-              size="hero-icon"
-              type="submit"
-              variant="hero"
-            >
-              <Send />
-            </Button>
-          </motion.div>
+          <Button
+            aria-label="Continue"
+            disabled={!canContinue}
+            pressMotion
+            size="hero-icon"
+            type="submit"
+            variant="hero"
+          >
+            <Send />
+          </Button>
         </div>
       ) : (
         <div>
@@ -74,19 +72,18 @@ export function OnboardingStepForm({
             onChange={(event) => onChange(event.target.value)}
           />
           <InputDepthMeter options={depthMeter} value={value} />
-          <motion.div className="mt-4" whileTap={{ scale: 0.98 }}>
-            <Button
-              aria-label="Continue"
-              className="w-full"
-              disabled={!canContinue}
-              size="hero"
-              type="submit"
-              variant="hero"
-            >
-              Continue
-              <Send />
-            </Button>
-          </motion.div>
+          <Button
+            aria-label="Continue"
+            className="mt-4 w-full"
+            disabled={!canContinue}
+            pressMotion
+            size="hero"
+            type="submit"
+            variant="hero"
+          >
+            Continue
+            <Send />
+          </Button>
         </div>
       )}
 

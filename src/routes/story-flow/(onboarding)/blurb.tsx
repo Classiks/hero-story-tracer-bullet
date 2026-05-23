@@ -3,7 +3,7 @@ import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryLoadingEmblem,
+  StoryWaitState,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { useCreateStoryMutation } from '#/modules/story-flow/story-api-client'
@@ -112,17 +112,17 @@ function RouteComponent() {
 
 function StoryLoading({ name }: { name: string }) {
   return (
-    <div className="mt-12">
-      <StoryLoadingEmblem>
-        <ScrollText className="size-9" />
-      </StoryLoadingEmblem>
-      <StoryHeading compact size="page">
-        Forging your chronicle
-      </StoryHeading>
-      <StoryCopy wide>
-        The narrator is reading the path ahead for {name}, turning the goal
-        into a quest, and shaping the challenge into something that can be faced.
-      </StoryCopy>
-    </div>
+    <StoryWaitState
+      body={`The narrator is reading the path ahead for ${name}, turning the goal into a quest, and shaping the challenge into something that can be faced.`}
+      heading="Forging your chronicle"
+      icon={<ScrollText className="size-9" />}
+      messages={[
+        'Finding the shape of the journey...',
+        'Naming the hero, threat, and reward...',
+        'Turning real stakes into story fuel...',
+        'Sharpening the first page of the chronicle...',
+        'Giving the goal a world to live in...',
+      ]}
+    />
   )
 }

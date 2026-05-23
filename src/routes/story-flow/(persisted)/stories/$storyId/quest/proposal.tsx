@@ -12,11 +12,10 @@ import {
 import { QuestReasonDialog } from '#/components/story-flow/quest-context'
 import { InputDepthMeter } from '#/components/story-flow/input-depth-meter'
 import {
-  StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryLoadingEmblem,
   StorySurface,
+  StoryWaitState,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { Textarea } from '#/components/ui/textarea'
@@ -182,17 +181,13 @@ function QuestLoading({
   const copy = getQuestLoadingCopy(mode)
 
   return (
-    <div className="mt-12">
-      <StoryLoadingEmblem glow={false}>
-        <ScrollText className="size-9" />
-      </StoryLoadingEmblem>
-      <StoryHeading compact size="page">
-        {copy.heading}
-      </StoryHeading>
-      <StoryCopy wide>
-        {copy.body(name)}
-      </StoryCopy>
-    </div>
+    <StoryWaitState
+      body={copy.body(name)}
+      glow={false}
+      heading={copy.heading}
+      icon={<ScrollText className="size-9" />}
+      messages={copy.messages}
+    />
   )
 }
 
@@ -203,18 +198,39 @@ function getQuestLoadingCopy(mode: 'first' | 'next' | 'replacement') {
         heading: 'Preparing your first quest',
         body: (name: string | undefined) =>
           `The narrator is reading the path ahead${name ? ` for ${name}` : ''} and shaping one step into a quest worth answering.`,
+        messages: [
+          'Looking for the smallest useful step...',
+          'Wrapping the task in story logic...',
+          'Choosing stakes that fit today...',
+          'Making the first move feel clear...',
+          'Turning friction into a quest hook...',
+        ],
       }
     case 'next':
       return {
         heading: 'Preparing your next quest',
         body: () =>
           'The narrator is reading what already happened and shaping the next step.',
+        messages: [
+          'Reading the marks already made...',
+          'Finding the next useful opening...',
+          'Keeping the story moving forward...',
+          'Tuning the next step to the moment...',
+          'Preparing another choice worth taking...',
+        ],
       }
     case 'replacement':
       return {
         heading: 'Finding a better fit',
         body: () =>
           'The old proposal has been set aside. The narrator is using your feedback to shape another quest.',
+        messages: [
+          'Learning from what missed the mark...',
+          'Trying a sharper angle...',
+          'Keeping the useful parts, changing the ask...',
+          'Listening for a better next step...',
+          'Recasting the quest around your feedback...',
+        ],
       }
   }
 }
@@ -372,6 +388,7 @@ function QuestPresentation({ onQuestRejected, quest }: {
         className="mt-6 w-full"
         disabled={acceptQuest.isPending}
         onClick={handleAcceptQuest}
+        pressMotion
         size="hero"
         variant="hero"
       >

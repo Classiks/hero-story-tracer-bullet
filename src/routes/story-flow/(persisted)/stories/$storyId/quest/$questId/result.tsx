@@ -1,18 +1,17 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#/components/ui/accordion'
 import { Button } from '#/components/ui/button'
 import {
-  StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryLoadingEmblem,
   StorySurface,
+  StoryWaitState,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-image-placeholder'
 import { questOutcomeSucceeded, type QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
 import { useGenerateQuestResultImageMutation, useQuestQuery } from '#/modules/story-flow/story-api-client'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, Award, CircleSlash, ScrollText, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Award, CircleSlash, ScrollText } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
@@ -120,6 +119,7 @@ function RouteComponent() {
                   to: NextRoute.to,
                 })
               }
+              pressMotion
               size="hero"
               variant="hero"
             >
@@ -151,28 +151,33 @@ function QuestResultLoading({ outcomeStatus }: { outcomeStatus: QuestOutcomeStat
   const success = questOutcomeSucceeded(outcomeStatus)
 
   return (
-    <div className="mt-12">
-      <StoryLoadingEmblem>
-        <ScrollText className="size-9" />
-      </StoryLoadingEmblem>
-      <motion.div
-        className="mt-7 flex justify-center"
-        animate={{ opacity: [0.45, 1, 0.45] }}
-        transition={{ duration: 1.7, repeat: Infinity }}
-      >
-        <Sparkles className="size-5 text-primary" />
-      </motion.div>
-      <StoryHeading accent="chronicle." compact size="page">
-        Writing
-      </StoryHeading>
-      <StoryCopy wide>
-        {success
-          ? 'The narrator is shaping your completed quest into a bright mark in the chronicle.'
-          : 'The narrator is shaping this unresolved quest into a steady path forward.'}
-      </StoryCopy>
-    </div>
+    <StoryWaitState
+      body={success
+        ? 'The narrator is shaping your completed quest into a bright mark in the chronicle.'
+        : 'The narrator is shaping this unresolved quest into a steady path forward.'}
+      heading="Writing"
+      headingAccent="chronicle."
+      icon={<ScrollText className="size-9" />}
+      messages={success ? completedResultMessages : unresolvedResultMessages}
+    />
   )
 }
+
+const completedResultMessages = [
+  'Finding the visible shape of the win...',
+  'Letting the world react to your action...',
+  'Writing the mark this quest leaves behind...',
+  'Turning effort into a story beat...',
+  'Making the victory feel earned...',
+]
+
+const unresolvedResultMessages = [
+  'Finding the path through the unfinished work...',
+  'Writing what changed, even without a clean win...',
+  'Keeping the story moving forward...',
+  'Turning friction into useful context...',
+  'Preparing the next opening...',
+]
 
 function ResultStatusCard({ outcomeStatus }: { outcomeStatus: QuestOutcomeStatus }) {
   const success = questOutcomeSucceeded(outcomeStatus)

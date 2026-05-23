@@ -4,6 +4,7 @@ import {
   StoryFrame,
   StoryHeading,
   StorySurface,
+  StoryWaitState,
 } from '#/components/story-flow/story-primitives'
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-image-placeholder'
@@ -11,7 +12,7 @@ import { useGenerateStoryImageMutation, useStoryQuery } from '#/modules/story-fl
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
 import { useOnboardingStore } from '#/state/onboarding'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ScrollText, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
@@ -94,18 +95,17 @@ function RouteComponent() {
 
 function StoryLoading() {
   return (
-    <div className="mt-12">
-      <motion.div
-        aria-hidden="true"
-        className="mx-auto size-28 rounded-full border border-accent/20 bg-accent/10"
-        animate={{ rotate: 360, scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-      />
-      <StoryHeading accent="the chronicle." compact>
-        Loading
-      </StoryHeading>
-      <StoryCopy wide>The narrator is opening the saved chronicle.</StoryCopy>
-    </div>
+    <StoryWaitState
+      body="The narrator is opening the saved chronicle."
+      heading="Loading"
+      headingAccent="the chronicle."
+      icon={<ScrollText className="size-9" />}
+      messages={[
+        'Finding the title page...',
+        'Dusting off the first chapter...',
+        'Reading the world back into view...',
+      ]}
+    />
   )
 }
 
@@ -149,13 +149,24 @@ function StoryPresentation({ story }: { story: PersistedStory }) {
       </StoryCopy>
 
       <div className="mt-5 grid gap-3">
-        <MetaphorCard icon={<Crown className="size-5" />} label="Hero" value={blueprint.metaphors.hero} />
+        <MetaphorCard
+          icon={<Crown className="size-5" />}
+          index={0}
+          label="Hero"
+          value={blueprint.metaphors.hero}
+        />
         <MetaphorCard
           icon={<ShieldAlert className="size-5" />}
+          index={1}
           label="Challenge"
           value={blueprint.metaphors.enemy}
         />
-        <MetaphorCard icon={<Gem className="size-5" />} label="Reward" value={blueprint.metaphors.reward} />
+        <MetaphorCard
+          icon={<Gem className="size-5" />}
+          index={2}
+          label="Reward"
+          value={blueprint.metaphors.reward}
+        />
       </div>
 
       <Button
@@ -207,10 +218,12 @@ function StoryImageBanner({
 
 function MetaphorCard({
   icon,
+  index,
   label,
   value,
 }: {
   icon: React.ReactNode
+  index: number
   label: string
   value: string
 }) {
@@ -219,6 +232,7 @@ function MetaphorCard({
       className="flex items-center gap-3 rounded-2xl p-4"
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.12 + index * 0.05 }}
     >
       <div className="grid size-10 place-items-center rounded-xl bg-accent/10 text-accent">
         {icon}

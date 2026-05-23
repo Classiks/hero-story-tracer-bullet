@@ -7,6 +7,7 @@ import {
   StoryFrame,
   StoryHeading,
   StorySurface,
+  StoryWaitState,
 } from '#/components/story-flow/story-primitives'
 import { useStoriesQuery } from '#/modules/story-flow/story-api-client'
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
@@ -96,6 +97,7 @@ function RouteComponent() {
               <Button
                 className="mt-6 w-full"
                 onClick={startStory}
+                pressMotion
                 size="hero"
                 variant="hero"
               >
@@ -183,20 +185,17 @@ function SignedOutLanding({ isExplicitlySignedOut }: { isExplicitlySignedOut: bo
 
 function LandingLoading() {
   return (
-    <div className="mt-12">
-      <motion.div
-        aria-hidden="true"
-        className="mx-auto grid size-28 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent"
-        animate={{ rotate: 360, scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-      >
-        <BookOpen className="size-9" />
-      </motion.div>
-      <StoryHeading accent="stories." compact>
-        Opening
-      </StoryHeading>
-      <StoryCopy wide>The narrator is finding your saved paths.</StoryCopy>
-    </div>
+    <StoryWaitState
+      body="The narrator is finding your saved paths."
+      heading="Opening"
+      headingAccent="stories."
+      icon={<BookOpen className="size-9" />}
+      messages={[
+        'Checking the story shelf...',
+        'Looking for active paths...',
+        'Opening the library doors...',
+      ]}
+    />
   )
 }
 

@@ -1,5 +1,6 @@
 import { cn } from '#/lib/utils'
 import { motion } from 'framer-motion'
+import { RotatingLoadingText } from '#/components/story-flow/rotating-loading-text'
 
 import type { ComponentProps, ReactNode } from 'react'
 
@@ -191,5 +192,43 @@ export function StoryLoadingEmblem({
     >
       {children}
     </motion.div>
+  )
+}
+
+export function StoryWaitState({
+  body,
+  className,
+  glow = true,
+  heading,
+  headingAccent,
+  icon,
+  messages,
+}: {
+  body: ReactNode
+  className?: string
+  glow?: boolean
+  heading: ReactNode
+  headingAccent?: ReactNode
+  icon: ReactNode
+  messages?: readonly string[]
+}) {
+  return (
+    <div className={cn('mt-12', className)}>
+      <StoryLoadingEmblem glow={glow}>
+        {icon}
+      </StoryLoadingEmblem>
+      <StoryHeading accent={headingAccent} compact size="page">
+        {heading}
+      </StoryHeading>
+      <StoryCopy wide>{body}</StoryCopy>
+      {messages && (
+        <div className="mt-6 min-h-6 text-center">
+          <RotatingLoadingText
+            className="text-sm font-semibold text-accent"
+            messages={messages}
+          />
+        </div>
+      )}
+    </div>
   )
 }

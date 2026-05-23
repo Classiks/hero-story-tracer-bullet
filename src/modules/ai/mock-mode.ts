@@ -28,14 +28,14 @@ function delay(ms: number) {
 }
 
 export async function readMockData<T extends ZodType>(schema: T, schemaId: string) {
-  await delay(800)
   const mockPath = join(process.cwd(), 'mocks', `${schemaId}.json`)
+  await delay(4800)
   const content = await readFile(mockPath, 'utf8')
   return schema.parse(JSON.parse(content))
 }
 
 export async function readMockImage() {
-  await delay(1600)
+  await delay(1370)
   const mockPath = join(process.cwd(), 'mocks', 'image.txt')
   return (await readFile(mockPath, 'utf8')).trim()
 }
