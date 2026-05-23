@@ -1,5 +1,5 @@
 import { Button } from '#/components/ui/button'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#/components/ui/accordion'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '#/components/ui/collapsible'
 import {
   Dialog,
   DialogClose,
@@ -41,6 +41,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  ChevronDown,
   ImageIcon,
   Loader2,
   MoreHorizontal,
@@ -486,23 +487,24 @@ function ComicPageDialog({
             ))}
         </div>
 
-        <Accordion className="rounded-2xl border border-border bg-card/60 px-4" collapsible type="single">
-          <AccordionItem value="quest-context">
-            <AccordionTrigger>Quest context</AccordionTrigger>
-            <AccordionContent>
-              <div className="grid gap-4 text-sm">
-                <ContextDetail label="Outcome" value={getOutcomeContextLabel(quest)} />
-                <ContextDetail label="Real-world step" value={quest.recommendedTask.task} />
-                <ContextDetail label="Quest" value={quest.quest.quest} />
-                <ContextDetail label="In-story action" value={quest.quest.action} />
-                <ContextDetail
-                  label="Feedback"
-                  value={quest.feedback.note?.trim() || 'No note was added.'}
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        <Collapsible>
+          <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-md py-1 text-left text-[0.68rem] font-bold uppercase tracking-wider text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180">
+            <span>Quest context</span>
+            <ChevronDown className="pointer-events-none size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:text-foreground" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+            <div className="grid gap-4 pt-4">
+              <ContextDetail label="Outcome" value={getOutcomeContextLabel(quest)} />
+              <ContextDetail label="Real-world step" value={quest.recommendedTask.task} />
+              <ContextDetail label="Quest" value={quest.quest.quest} />
+              <ContextDetail label="In-story action" value={quest.quest.action} />
+              <ContextDetail
+                label="Feedback"
+                value={quest.feedback.note?.trim() || 'No note was added.'}
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </DialogContent>
     </Dialog>
   )
@@ -511,7 +513,7 @@ function ComicPageDialog({
 function ContextDetail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
         {label}
       </p>
       <p className="mt-1 leading-relaxed text-foreground/85">{value}</p>
