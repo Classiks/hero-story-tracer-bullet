@@ -9,7 +9,51 @@ import type {
   StorySessionResponse,
   UpdateStoryStatusRequest,
 } from '#/modules/story-flow/persisted-types'
+import type {
+  UpdateUserSettingsRequest,
+  UserSettingsResponse,
+} from '#/modules/user-settings'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+
+export function useUserSettingsQuery({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({
+    enabled,
+    queryKey: ['user-settings'],
+    queryFn: async () => {
+      const response = await authenticatedFetch('/api/settings')
+
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to load settings'))
+      }
+
+      return (await response.json()) as UserSettingsResponse
+    },
+    refetchOnWindowFocus: false,
+    retry: false,
+  })
+}
+
+export function useUpdateUserSettingsMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: UpdateUserSettingsRequest) => {
+      const response = await authenticatedFetch('/api/settings', {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      })
+
+      if (!response.ok) {
+        throw new Error(await readError(response, 'Failed to update settings'))
+      }
+
+      return (await response.json()) as UserSettingsResponse
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['user-settings'], data)
+    },
+  })
+}
 
 export function useCreateStoryMutation() {
   const queryClient = useQueryClient()

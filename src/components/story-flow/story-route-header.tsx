@@ -11,9 +11,11 @@ import type { ReactNode } from 'react'
 export function StoryRouteHeader({
   actions,
   children,
+  showHomeAction = true,
 }: {
   actions?: ReactNode
   children: ReactNode
+  showHomeAction?: boolean
 }) {
   const navigate = useNavigate()
 
@@ -23,21 +25,23 @@ export function StoryRouteHeader({
 
       <div className="flex items-center gap-2">
         {actions}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              aria-label="Back to stories"
-              onClick={() => navigate({ to: LandingRoute.to })}
-              size="icon-sm"
-              variant="outline"
-            >
-              <Home className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Back to stories</p>
-          </TooltipContent>
-        </Tooltip>
+        {showHomeAction && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label="Back to stories"
+                onClick={() => navigate({ to: LandingRoute.to })}
+                size="icon-sm"
+                variant="outline"
+              >
+                <Home className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Back to stories</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </div>
   )

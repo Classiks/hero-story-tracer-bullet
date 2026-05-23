@@ -79,6 +79,13 @@ create table if not exists public.ai_generations (
   unique (user_id, key)
 );
 
+create table if not exists public.user_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  text_model text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists stories_user_id_idx on public.stories(user_id);
 create index if not exists stories_user_status_idx on public.stories(user_id, status);
 create index if not exists quests_story_id_idx on public.quests(story_id);
@@ -118,10 +125,16 @@ create trigger ai_generations_set_updated_at
 before update on public.ai_generations
 for each row execute function public.set_updated_at();
 
+drop trigger if exists user_settings_set_updated_at on public.user_settings;
+create trigger user_settings_set_updated_at
+before update on public.user_settings
+for each row execute function public.set_updated_at();
+
 alter table public.stories enable row level security;
 alter table public.quests enable row level security;
 alter table public.generated_assets enable row level security;
 alter table public.ai_generations enable row level security;
+alter table public.user_settings enable row level security;
 
 drop policy if exists "Users can select own stories" on public.stories;
 create policy "Users can select own stories"
@@ -282,6 +295,27 @@ with check (user_id = auth.uid());
 drop policy if exists "Users can delete own ai generations" on public.ai_generations;
 create policy "Users can delete own ai generations"
 on public.ai_generations for delete
+using (user_id = auth.uid());
+
+drop policy if exists "Users can select own settings" on public.user_settings;
+create policy "Users can select own settings"
+on public.user_settings for select
+using (user_id = auth.uid());
+
+drop policy if exists "Users can insert own settings" on public.user_settings;
+create policy "Users can insert own settings"
+on public.user_settings for insert
+with check (user_id = auth.uid());
+
+drop policy if exists "Users can update own settings" on public.user_settings;
+create policy "Users can update own settings"
+on public.user_settings for update
+using (user_id = auth.uid())
+with check (user_id = auth.uid());
+
+drop policy if exists "Users can delete own settings" on public.user_settings;
+create policy "Users can delete own settings"
+on public.user_settings for delete
 using (user_id = auth.uid());
 
 insert into storage.buckets (id, name, public)

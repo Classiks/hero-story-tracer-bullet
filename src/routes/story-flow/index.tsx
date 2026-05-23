@@ -1,10 +1,11 @@
 import { Button } from '#/components/ui/button'
 import { AccountDialog } from '#/components/story-flow/account-dialog'
+import { SettingsDialog } from '#/components/story-flow/settings-dialog'
+import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import {
   StoryCopy,
   StoryFrame,
   StoryHeading,
-  StoryKicker,
   StorySurface,
 } from '#/components/story-flow/story-primitives'
 import { useStoriesQuery } from '#/modules/story-flow/story-api-client'
@@ -47,10 +48,17 @@ function RouteComponent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.36 }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <StoryKicker>Your stories</StoryKicker>
-            <AccountDialog />
-          </div>
+          <StoryRouteHeader
+            actions={(
+              <>
+                <SettingsDialog />
+                <AccountDialog />
+              </>
+            )}
+            showHomeAction={false}
+          >
+            Your stories
+          </StoryRouteHeader>
 
           {(authIsLoading || (user && storiesQuery.isPending)) && <LandingLoading />}
 

@@ -29,6 +29,8 @@ import type {
   StoryProgress,
   StoryStatus,
 } from '#/modules/story-flow/persisted-types'
+import type { UserTextModel } from '#/modules/user-settings'
+import { getResolvedUserTextModel } from '#/modules/user-settings.server'
 
 const GENERATED_ASSETS_BUCKET = 'generated-assets'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
@@ -301,9 +303,11 @@ export async function createPersistedStory({
     run: async () => {
       const storyId = crypto.randomUUID()
       const priorStoryContext = await getPriorStoryContext({ supabase, userId })
+      const textModel = await getResolvedUserTextModel({ supabase, userId })
       const blueprint = await generateStoryBlueprint({
         challenge,
         goal,
+        model: textModel,
         name,
         priorStoryContext,
       })
@@ -604,10 +608,20 @@ export async function createPersistedQuest({
       return getPersistedQuest({ questId: row.result_quest_id, supabase })
     },
     run: async () => {
+      const textModel = await getResolvedUserTextModel({ supabase, userId: storyRow.user_id })
       const recentQuestRows = await getRecentQuestRows({ storyId, supabase })
       const continuityContext = formatContinuityContext(recentQuestRows)
-      const recommendedTask = await generateRecommendedTask({ continuityContext, story })
-      const quest = await generateQuest({ continuityContext, recommendedTask, story })
+      const recommendedTask = await generateRecommendedTask({
+        continuityContext,
+        model: textModel,
+        story,
+      })
+      const quest = await generateQuest({
+        continuityContext,
+        model: textModel,
+        recommendedTask,
+        story,
+      })
 
       const { data: questRow, error: insertQuestError } = await supabase
         .from('quests')
@@ -740,6 +754,7 @@ export async function completePersistedQuest({
       return getPersistedQuest({ questId: row.result_quest_id, supabase })
     },
     run: async () => {
+      const textModel = await getResolvedUserTextModel({ supabase, userId: storyRow.user_id })
       const recentQuestRows = await getRecentQuestRows({ storyId: story.id, supabase })
       const continuityContext = formatContinuityContext(
         recentQuestRows.filter((row) => row.id !== questId),
@@ -747,6 +762,7 @@ export async function completePersistedQuest({
       const resultText = await generateQuestResultText({
         continuityContext,
         feedback,
+        model: textModel,
         outcomeStatus,
         quest,
         recommendedTask,
@@ -998,11 +1014,13 @@ function formatPriorStoryContext(
 async function generateStoryBlueprint({
   challenge,
   goal,
+  model,
   name,
   priorStoryContext,
 }: {
   challenge: string
   goal: string
+  model: UserTextModel
   name: string
   priorStoryContext: string
 }) {
@@ -1013,6 +1031,7 @@ async function generateStoryBlueprint({
   return generateData(
     createStoryBlueprintPrompt({ challenge, goal, name, priorStoryContext }),
     StoryBlueprint,
+    { model },
   )
 }
 
@@ -1030,9 +1049,11 @@ async function generateStoryImage(blueprint: IStoryBlueprint) {
 
 async function generateRecommendedTask({
   continuityContext,
+  model,
   story,
 }: {
   continuityContext: string
+  model: UserTextModel
   story: PersistedStory
 }) {
   if (shouldMock('recommendedTask')) {
@@ -1048,15 +1069,18 @@ async function generateRecommendedTask({
       storyBlueprint: story.blueprint,
     }),
     RecommendedTask,
+    { model },
   )
 }
 
 async function generateQuest({
   continuityContext,
+  model,
   recommendedTask,
   story,
 }: {
   continuityContext: string
+  model: UserTextModel
   recommendedTask: IRecommendedTask
   story: PersistedStory
 }) {
@@ -1074,12 +1098,14 @@ async function generateQuest({
       task: recommendedTask,
     }),
     Quest,
+    { model },
   )
 }
 
 async function generateQuestResultText({
   continuityContext,
   feedback,
+  model,
   outcomeStatus,
   quest,
   recommendedTask,
@@ -1087,6 +1113,7 @@ async function generateQuestResultText({
 }: {
   continuityContext: string
   feedback: QuestFeedback
+  model: UserTextModel
   outcomeStatus: QuestOutcomeStatus
   quest: IQuest
   recommendedTask: IRecommendedTask
@@ -1109,6 +1136,7 @@ async function generateQuestResultText({
       task: recommendedTask,
     }),
     QuestResultText,
+    { model },
   )
 }
 
