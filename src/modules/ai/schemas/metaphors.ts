@@ -13,7 +13,7 @@ export const Metaphors = z.object({
 
 export const StoryBlueprint = z.object({
   title: z.string().describe("A short, display-ready title for this user's hero story."),
-  storyBlurb: z.string().describe("A vivid 2-3 sentence motivational story setup addressed to the user."),
+  storyBlurb: z.string().describe("A vivid 1-3 sentence motivational story setup addressed to the user; narrative, compact, and mobile-friendly."),
   metaphors: Metaphors,
 }).describe("A mobile presentation-ready hero story blueprint for motivational task support.")
 
@@ -24,8 +24,8 @@ export const RecommendedTask = z.object({
 
 export const Quest = z.object({
   quest: z.string().describe("A short in-world quest title with no literal productivity terms unless they already belong to the story world."),
-  content: z.string().describe("A 3-5 sentence immersive RPG-style quest brief with situation, stakes, immediate action, and emotional payoff."),
-  action: z.string().describe("A short in-world action instruction the hero should take now."),
+  content: z.string().describe("A 1-2 sentence immersive RPG-style quest brief with situation, stakes, immediate action, and emotional payoff."),
+  action: z.string().describe("A brief, natural in-world action instruction the hero should take now; complete enough to be actionable."),
   metaphors: MetaphorList,
 }).describe("A user-facing motivational quest generated from a recommended real-world task.")
 
@@ -36,7 +36,7 @@ export const QuestProposal = z.object({
 
 export const QuestResultText = z.object({
   title: z.string().describe("A short in-world title for the story beat that follows a quest attempt."),
-  text: z.string().describe("A compact in-world story bite showing what changed after the quest attempt."),
+  text: z.string().describe("A compact 1-2 sentence in-world story bite showing what changed after the quest attempt."),
   reasoning: z.string().describe("A concise explanation of how the outcome and user feedback informed the story beat."),
   metaphors: MetaphorList
 }).describe("A user-facing story beat generated from a quest outcome.")

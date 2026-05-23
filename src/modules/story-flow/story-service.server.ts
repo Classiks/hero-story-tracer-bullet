@@ -300,7 +300,13 @@ export async function createPersistedStory({
     },
     run: async () => {
       const storyId = crypto.randomUUID()
-      const blueprint = await generateStoryBlueprint({ challenge, goal, name })
+      const priorStoryContext = await getPriorStoryContext({ supabase, userId })
+      const blueprint = await generateStoryBlueprint({
+        challenge,
+        goal,
+        name,
+        priorStoryContext,
+      })
 
       const { data: storyRow, error: insertStoryError } = await supabase
         .from('stories')
@@ -932,20 +938,82 @@ export async function rejectPersistedQuest({
   return toQuestResponse({ row: updatedRow, supabase })
 }
 
+async function getPriorStoryContext({
+  supabase,
+  userId,
+}: {
+  supabase: ServerSupabase
+  userId: string
+}) {
+  const { data: rows, error } = await supabase
+    .from('stories')
+    .select('blueprint, challenge, goal')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false })
+    .limit(6)
+
+  if (error) {
+    throw new StoryServiceError(error.message)
+  }
+
+  return formatPriorStoryContext(rows ?? [])
+}
+
+function formatPriorStoryContext(
+  rows: Array<{
+    blueprint: Json | null
+    challenge: string
+    goal: string
+  }>,
+) {
+  const lines = rows.flatMap((row, index) => {
+    const parsed = StoryBlueprint.safeParse(row.blueprint)
+
+    if (!parsed.success) {
+      return []
+    }
+
+    const blueprint = parsed.data
+    return [
+      [
+        `Story ${index + 1}:`,
+        `goal="${row.goal}"`,
+        `challenge="${row.challenge}"`,
+        `title="${blueprint.title}"`,
+        `blurb="${blueprint.storyBlurb}"`,
+        `hero="${blueprint.metaphors.hero}"`,
+        `enemy="${blueprint.metaphors.enemy}"`,
+        `reward="${blueprint.metaphors.reward}"`,
+      ].join(' '),
+    ]
+  })
+
+  if (!lines.length) {
+    return '- No previous stories yet.'
+  }
+
+  return lines.map((line) => `- ${line}`).join('\n')
+}
+
 async function generateStoryBlueprint({
   challenge,
   goal,
   name,
+  priorStoryContext,
 }: {
   challenge: string
   goal: string
   name: string
+  priorStoryContext: string
 }) {
   if (shouldMock('storyBlueprint')) {
     return readMockData(StoryBlueprint, 'storyBlueprint')
   }
 
-  return generateData(createStoryBlueprintPrompt({ challenge, goal, name }), StoryBlueprint)
+  return generateData(
+    createStoryBlueprintPrompt({ challenge, goal, name, priorStoryContext }),
+    StoryBlueprint,
+  )
 }
 
 async function generateStoryImage(blueprint: IStoryBlueprint) {

@@ -15,10 +15,12 @@ export function createStoryBlueprintPrompt({
   challenge,
   goal,
   name,
+  priorStoryContext,
 }: {
   challenge: string
   goal: string
   name: string
+  priorStoryContext?: string
 }) {
   return `
 Create a motivational hero-story blueprint for a task-support app.
@@ -31,13 +33,20 @@ User:
 - Goal: ${goal}
 - Challenge: ${challenge}
 
+Previous stories shown to this user:
+${priorStoryContext || '- No previous stories yet.'}
+
 Rules:
 - Address the user by name in the story blurb.
 - Keep the title short and punchy.
+- The story blurb should be 1-3 narrative sentences, written for a short mobile attention span.
+- If the blurb uses 3 sentences, each sentence must be concise; if it uses 1 sentence, it may be a little richer.
 - The metaphors must connect clearly to the actual goal and challenge.
 - The enemy metaphor should make the challenge feel faceable, not hopeless.
 - The reward metaphor should feel emotionally meaningful, not just material.
-- The call to action should be one short sentence.
+- If this goal and challenge resemble a previous story, it is encouraged to reuse, derive, or echo that story's themes and metaphors so the user feels continuity.
+- If this goal or challenge is materially different from previous stories, choose fresh framing and do not reuse the same metaphors.
+- Use previous stories as context for continuity decisions, not as lore that must be recapped.
 `
 }
 
@@ -163,10 +172,10 @@ ${continuityContext || '- No prior quests yet.'}
 
 Rules:
 - quest: short in-world quest title. Do not use literal productivity terms.
-- content: 3-5 sentences of immersive in-world quest text.
+- content: 1-2 narrative in-world sentences, compact but still story-like.
 - content must establish the immediate story situation, name the pressure or threat, call the hero into action, and show what this small action changes.
-- action: short, direct in-world instruction the hero should take now.
-- action must be actionable while staying fully inside the story metaphor.
+- action: brief, natural in-world instruction the hero should take now.
+- action must be complete, motivating, and actionable while staying fully inside the story metaphor; do not make it artificially terse.
 - metaphors: list the important real-world concepts and their story-world translations for the explanation dialog.
 - The first metaphors item must map the complete real-world recommended task to the generated in-world action.
 - Treat the hero, challenge metaphor, and reward as canon. They are the spine of the story.
@@ -186,7 +195,7 @@ Rules:
 - Bad content: "Spend 25 minutes coding on your app, ignoring all distractions."
 - Bad action: "Spend 25 minutes coding on your app, ignoring all distractions."
 - Good title: "The First Strike at Dawn"
-- Good content: "Iron Will, the forge has cooled beneath the Great Sloth's mist, but one coal still glows under the ash. The beast fattens on every unguarded hour, and its whispers grow louder when the hammer stays still. Take up the work for one focused watch and shape the relic one clean strike further. Let the fog learn that even a small flame can push it back."
+- Good content: "Iron Will, the forge has cooled beneath the Great Sloth's mist, but one coal still glows under the ash; take up one focused watch and shape the relic one clean strike further."
 - Good action: "Hold the forge for one focused watch, shaping the relic while the Sloth's whispers pass unanswered."
 `
 }
@@ -250,7 +259,7 @@ Outcome:
 
 Rules:
 - title: short in-world title for this story beat.
-- text: 3-6 sentences, immersive, readable, and part of the larger story.
+- text: 1-2 narrative in-world sentences, immersive and readable without becoming a long chapter.
 - metaphors: list the important real-world concepts and their story-world translations for this result beat.
 - The first metaphors item must map the concrete quest outcome to the main story-world change in the generated text.
 - Include mappings for user feedback from the note when it materially affects the story beat.
