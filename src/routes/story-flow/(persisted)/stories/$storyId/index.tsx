@@ -1,4 +1,5 @@
 import { Button } from '#/components/ui/button'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#/components/ui/accordion'
 import {
   Dialog,
   DialogClose,
@@ -363,8 +364,8 @@ function StorySoFar({
 
       {storyBeats.length ? (
         <div className="mt-4 grid gap-5">
-          {storyBeats.map((quest) => (
-            <StoryComicPanel key={quest.id} quest={quest} />
+          {storyBeats.map((quest, index) => (
+            <StoryComicPanel key={quest.id} pageNumber={index + 1} quest={quest} />
           ))}
         </div>
       ) : (
@@ -374,7 +375,13 @@ function StorySoFar({
   )
 }
 
-function StoryComicPanel({ quest }: { quest: PersistedQuest }) {
+function StoryComicPanel({
+  pageNumber,
+  quest,
+}: {
+  pageNumber: number
+  quest: PersistedQuest
+}) {
   const result = quest.resultText
 
   if (!result) {
@@ -409,7 +416,7 @@ function StoryComicPanel({ quest }: { quest: PersistedQuest }) {
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-black uppercase tracking-widest text-primary">
-            Page {quest.sequenceNumber}
+            Page {pageNumber}
           </p>
           <p className="rounded-full border border-border bg-card px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-widest text-muted-foreground">
             {getStatusLabel(quest.status)}
@@ -422,13 +429,19 @@ function StoryComicPanel({ quest }: { quest: PersistedQuest }) {
         <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-foreground/80">
           {result.text}
         </p>
-        <ComicPageDialog quest={quest} />
+        <ComicPageDialog pageNumber={pageNumber} quest={quest} />
       </div>
     </StorySurface>
   )
 }
 
-function ComicPageDialog({ quest }: { quest: PersistedQuest }) {
+function ComicPageDialog({
+  pageNumber,
+  quest,
+}: {
+  pageNumber: number
+  quest: PersistedQuest
+}) {
   const result = quest.resultText
 
   if (!result) {
@@ -446,7 +459,7 @@ function ComicPageDialog({ quest }: { quest: PersistedQuest }) {
         <DialogHeader>
           <DialogTitle>{result.title}</DialogTitle>
           <DialogDescription>
-            Page {quest.sequenceNumber} · {getStatusLabel(quest.status)}
+            Page {pageNumber} · {getOutcomeContextLabel(quest)}
           </DialogDescription>
         </DialogHeader>
 
@@ -467,8 +480,37 @@ function ComicPageDialog({ quest }: { quest: PersistedQuest }) {
               <p key={paragraph}>{paragraph}</p>
             ))}
         </div>
+
+        <Accordion className="rounded-2xl border border-border bg-card/60 px-4" collapsible type="single">
+          <AccordionItem value="quest-context">
+            <AccordionTrigger>Quest context</AccordionTrigger>
+            <AccordionContent>
+              <div className="grid gap-4 text-sm">
+                <ContextDetail label="Outcome" value={getOutcomeContextLabel(quest)} />
+                <ContextDetail label="Real-world step" value={quest.recommendedTask.task} />
+                <ContextDetail label="Quest" value={quest.quest.quest} />
+                <ContextDetail label="In-story action" value={quest.quest.action} />
+                <ContextDetail
+                  label="Feedback"
+                  value={quest.feedback.note?.trim() || 'No note was added.'}
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function ContextDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 leading-relaxed text-foreground/85">{value}</p>
+    </div>
   )
 }
 
@@ -528,5 +570,18 @@ function getStatusLabel(status: PersistedQuest['status']) {
       return 'rejected'
     case 'unresolved':
       return 'unresolved'
+  }
+}
+
+function getOutcomeContextLabel(quest: PersistedQuest) {
+  switch (quest.outcomeStatus) {
+    case 'completed':
+      return 'Successful'
+    case 'rejected':
+      return 'Rejected'
+    case 'unresolved':
+      return 'Unresolved'
+    case null:
+      return getStatusLabel(quest.status)
   }
 }
