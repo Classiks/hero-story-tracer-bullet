@@ -69,6 +69,7 @@ export type StorySessionResponse = {
 
 export type CreateStoryRequest = {
   challenge: string
+  clientRequestId: string
   goal: string
   name: string
 }

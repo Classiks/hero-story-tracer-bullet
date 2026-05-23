@@ -27,21 +27,30 @@ export const Route = createFileRoute('/api/stories/')({
           if (
             typeof input.name !== 'string' ||
             typeof input.goal !== 'string' ||
-            typeof input.challenge !== 'string'
+            typeof input.challenge !== 'string' ||
+            typeof input.clientRequestId !== 'string'
           ) {
-            return Response.json({ error: 'name, goal, and challenge are required' }, { status: 400 })
+            return Response.json(
+              { error: 'name, goal, challenge, and clientRequestId are required' },
+              { status: 400 },
+            )
           }
 
           const name = input.name.trim()
           const goal = input.goal.trim()
           const challenge = input.challenge.trim()
+          const clientRequestId = input.clientRequestId.trim()
 
-          if (!name || !goal || !challenge) {
-            return Response.json({ error: 'name, goal, and challenge are required' }, { status: 400 })
+          if (!name || !goal || !challenge || !clientRequestId) {
+            return Response.json(
+              { error: 'name, goal, challenge, and clientRequestId are required' },
+              { status: 400 },
+            )
           }
 
           const story = await createPersistedStory({
             challenge,
+            clientRequestId,
             goal,
             name,
             supabase,

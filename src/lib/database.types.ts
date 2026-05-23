@@ -147,6 +147,63 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_generations: {
+        Row: {
+          id: string
+          user_id: string
+          key: string
+          kind:
+            | 'story_blueprint'
+            | 'quest_proposal'
+            | 'quest_result_text'
+            | 'story_image'
+            | 'quest_result_image'
+          status: 'running' | 'completed' | 'failed'
+          result_story_id: string | null
+          result_quest_id: string | null
+          error: string | null
+          locked_until: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          key: string
+          kind:
+            | 'story_blueprint'
+            | 'quest_proposal'
+            | 'quest_result_text'
+            | 'story_image'
+            | 'quest_result_image'
+          status?: 'running' | 'completed' | 'failed'
+          result_story_id?: string | null
+          result_quest_id?: string | null
+          error?: string | null
+          locked_until: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          key?: string
+          kind?:
+            | 'story_blueprint'
+            | 'quest_proposal'
+            | 'quest_result_text'
+            | 'story_image'
+            | 'quest_result_image'
+          status?: 'running' | 'completed' | 'failed'
+          result_story_id?: string | null
+          result_quest_id?: string | null
+          error?: string | null
+          locked_until?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

@@ -25,6 +25,8 @@ function RouteComponent() {
   const rawName = useOnboardingStore((state) => state.name)
   const rawGoal = useOnboardingStore((state) => state.goal)
   const rawChallenge = useOnboardingStore((state) => state.mainProblem)
+  const storyRequestId = useOnboardingStore((state) => state.storyRequestId)
+  const refreshStoryRequestId = useOnboardingStore((state) => state.refreshStoryRequestId)
   const createStory = useCreateStoryMutation()
   const requested = useRef(false)
   const [createError, setCreateError] = useState(false)
@@ -43,19 +45,21 @@ function RouteComponent() {
     setCreateError(false)
 
     void createStory
-      .mutateAsync({ challenge, goal, name })
+      .mutateAsync({ challenge, clientRequestId: storyRequestId, goal, name })
       .then(({ story }) => {
         return navigate({
           params: { storyId: story.id },
           replace: true,
           to: '/story-flow/stories/$storyId/blurb',
+        }).then(() => {
+          refreshStoryRequestId()
         })
       })
       .catch(() => {
         setCreateError(true)
         requested.current = false
       })
-  }, [challenge, createStory, goal, hasInputs, name, navigate])
+  }, [challenge, createStory, goal, hasInputs, name, navigate, refreshStoryRequestId, storyRequestId])
 
   if (!hasInputs) {
     return (

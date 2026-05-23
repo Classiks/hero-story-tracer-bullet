@@ -33,8 +33,33 @@ import type {
 const GENERATED_ASSETS_BUCKET = 'generated-assets'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
 const ACTIVE_STORY_STATUS: StoryStatus = 'active'
+const AI_GENERATION_LOCK_MS = 2 * 60 * 1000
+const AI_GENERATION_POLL_INTERVAL_MS = 500
+const AI_GENERATION_POLL_TIMEOUT_MS = 2 * 60 * 1000
 
 type ServerSupabase = ReturnType<typeof createServerSupabaseClient>
+type AiGenerationKind =
+  | 'story_blueprint'
+  | 'quest_proposal'
+  | 'quest_result_text'
+  | 'story_image'
+  | 'quest_result_image'
+type AiGenerationRow = {
+  error: string | null
+  id: string
+  key: string
+  kind: AiGenerationKind
+  locked_until: string
+  result_quest_id: string | null
+  result_story_id: string | null
+  status: 'running' | 'completed' | 'failed'
+  user_id: string
+}
+type AiGenerationResult<T> = {
+  result: T
+  resultQuestId?: string | null
+  resultStoryId?: string | null
+}
 
 export class StoryServiceError extends Error {
   constructor(
@@ -45,41 +70,264 @@ export class StoryServiceError extends Error {
   }
 }
 
+async function runAiGenerationOnce<T>({
+  key,
+  kind,
+  resolveExisting,
+  run,
+  supabase,
+  userId,
+}: {
+  key: string
+  kind: AiGenerationKind
+  resolveExisting: (row: AiGenerationRow) => Promise<T | null>
+  run: () => Promise<AiGenerationResult<T>>
+  supabase: ServerSupabase
+  userId: string
+}): Promise<T> {
+  const lockUntil = getAiGenerationLockUntil()
+  const { data: insertedRow, error: insertError } = await supabase
+    .from('ai_generations')
+    .insert({
+      key,
+      kind,
+      locked_until: lockUntil,
+      status: 'running',
+      user_id: userId,
+    })
+    .select()
+    .single()
+
+  if (!insertError && insertedRow) {
+    return completeOwnedAiGeneration({
+      row: insertedRow,
+      run,
+      supabase,
+    })
+  }
+
+  if (insertError?.code !== '23505') {
+    throw new StoryServiceError(insertError?.message ?? 'AI generation lock failed.')
+  }
+
+  return await resolveOrClaimExistingAiGeneration({
+    key,
+    kind,
+    resolveExisting,
+    run,
+    supabase,
+    userId,
+  })
+}
+
+async function completeOwnedAiGeneration<T>({
+  row,
+  run,
+  supabase,
+}: {
+  row: AiGenerationRow
+  run: () => Promise<AiGenerationResult<T>>
+  supabase: ServerSupabase
+}) {
+  try {
+    const output = await run()
+    const { error: updateError } = await supabase
+      .from('ai_generations')
+      .update({
+        error: null,
+        result_quest_id: output.resultQuestId ?? null,
+        result_story_id: output.resultStoryId ?? null,
+        status: 'completed',
+      })
+      .eq('id', row.id)
+
+    if (updateError) {
+      throw new StoryServiceError(updateError.message)
+    }
+
+    return output.result
+  } catch (error) {
+    await supabase
+      .from('ai_generations')
+      .update({
+        error: error instanceof Error ? error.message : 'AI generation failed.',
+        locked_until: new Date().toISOString(),
+        status: 'failed',
+      })
+      .eq('id', row.id)
+
+    throw error
+  }
+}
+
+async function resolveOrClaimExistingAiGeneration<T>({
+  key,
+  kind,
+  resolveExisting,
+  run,
+  supabase,
+  userId,
+}: {
+  key: string
+  kind: AiGenerationKind
+  resolveExisting: (row: AiGenerationRow) => Promise<T | null>
+  run: () => Promise<AiGenerationResult<T>>
+  supabase: ServerSupabase
+  userId: string
+}) {
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < AI_GENERATION_POLL_TIMEOUT_MS) {
+    const row = await getAiGenerationRow({ key, supabase, userId })
+
+    if (!row) {
+      await sleep(AI_GENERATION_POLL_INTERVAL_MS)
+      continue
+    }
+
+    if (row.kind !== kind) {
+      throw new StoryServiceError('AI generation key was reused for a different operation.', 409)
+    }
+
+    if (row.status === 'completed') {
+      const existing = await resolveExisting(row)
+      if (existing) {
+        return existing
+      }
+    }
+
+    if (row.status === 'failed' || new Date(row.locked_until).getTime() <= Date.now()) {
+      const claimedRow = await claimAiGenerationRow({ row, supabase })
+      if (claimedRow) {
+        return completeOwnedAiGeneration({
+          row: claimedRow,
+          run,
+          supabase,
+        })
+      }
+    }
+
+    await sleep(AI_GENERATION_POLL_INTERVAL_MS)
+  }
+
+  throw new StoryServiceError('AI generation is already in progress. Try again shortly.', 409)
+}
+
+async function getAiGenerationRow({
+  key,
+  supabase,
+  userId,
+}: {
+  key: string
+  supabase: ServerSupabase
+  userId: string
+}) {
+  const { data, error } = await supabase
+    .from('ai_generations')
+    .select()
+    .eq('user_id', userId)
+    .eq('key', key)
+    .maybeSingle()
+
+  if (error) {
+    throw new StoryServiceError(error.message)
+  }
+
+  return data
+}
+
+async function claimAiGenerationRow({
+  row,
+  supabase,
+}: {
+  row: AiGenerationRow
+  supabase: ServerSupabase
+}) {
+  const query = supabase
+    .from('ai_generations')
+    .update({
+      error: null,
+      locked_until: getAiGenerationLockUntil(),
+      status: 'running',
+    })
+    .eq('id', row.id)
+    .select()
+
+  const { data, error } =
+    row.status === 'failed'
+      ? await query.eq('status', 'failed').maybeSingle()
+      : await query.lt('locked_until', new Date().toISOString()).maybeSingle()
+
+  if (error) {
+    throw new StoryServiceError(error.message)
+  }
+
+  return data
+}
+
+function getAiGenerationLockUntil() {
+  return new Date(Date.now() + AI_GENERATION_LOCK_MS).toISOString()
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 export async function createPersistedStory({
   challenge,
+  clientRequestId,
   goal,
   name,
   supabase,
   userId,
 }: {
   challenge: string
+  clientRequestId: string
   goal: string
   name: string
   supabase: ServerSupabase
   userId: string
 }) {
-  const storyId = crypto.randomUUID()
-  const blueprint = await generateStoryBlueprint({ challenge, goal, name })
+  return runAiGenerationOnce({
+    key: `story:create:${clientRequestId}`,
+    kind: 'story_blueprint',
+    resolveExisting: async (row) => {
+      if (!row.result_story_id) {
+        return null
+      }
 
-  const { data: storyRow, error: insertStoryError } = await supabase
-    .from('stories')
-    .insert({
-      id: storyId,
-      user_id: userId,
-      name,
-      goal,
-      challenge,
-      status: 'active',
-      blueprint: blueprint as unknown as Json,
-    })
-    .select()
-    .single()
+      return getPersistedStory({ storyId: row.result_story_id, supabase })
+    },
+    run: async () => {
+      const storyId = crypto.randomUUID()
+      const blueprint = await generateStoryBlueprint({ challenge, goal, name })
 
-  if (insertStoryError) {
-    throw new StoryServiceError(insertStoryError.message)
-  }
+      const { data: storyRow, error: insertStoryError } = await supabase
+        .from('stories')
+        .insert({
+          id: storyId,
+          user_id: userId,
+          name,
+          goal,
+          challenge,
+          status: 'active',
+          blueprint: blueprint as unknown as Json,
+        })
+        .select()
+        .single()
 
-  return toStoryResponse({ row: storyRow, supabase })
+      if (insertStoryError) {
+        throw new StoryServiceError(insertStoryError.message)
+      }
+
+      return {
+        result: await toStoryResponse({ row: storyRow, supabase }),
+        resultStoryId: storyId,
+      }
+    },
+    supabase,
+    userId,
+  })
 }
 
 export async function generatePersistedStoryImage({
@@ -91,55 +339,76 @@ export async function generatePersistedStoryImage({
   supabase: ServerSupabase
   userId: string
 }) {
-  const { data: storyRow, error: storyError } = await supabase
-    .from('stories')
-    .select()
-    .eq('id', storyId)
-    .single()
-
-  if (storyError) {
-    throw new StoryServiceError(storyError.message, storyError.code === 'PGRST116' ? 404 : 500)
-  }
-
-  if (storyRow.story_image_path) {
-    return toStoryResponse({ row: storyRow, supabase })
-  }
-
-  const blueprint = StoryBlueprint.parse(storyRow.blueprint)
-  const imageBase64 = await generateStoryImage(blueprint)
-  const storyImagePath = `${userId}/stories/${storyId}/banner.png`
-
-  await uploadBase64Image({
-    base64: imageBase64,
-    path: storyImagePath,
-    supabase,
-  })
-
-  const { error: assetError } = await supabase.from('generated_assets').insert({
-    bucket: GENERATED_ASSETS_BUCKET,
+  return runAiGenerationOnce({
+    key: `story:image:${storyId}`,
     kind: 'story_image',
-    metadata: { promptType: 'storyImage' },
-    path: storyImagePath,
-    story_id: storyId,
-    user_id: userId,
+    resolveExisting: async (row) => {
+      if (!row.result_story_id) {
+        return null
+      }
+
+      return getPersistedStory({ storyId: row.result_story_id, supabase })
+    },
+    run: async () => {
+      const { data: storyRow, error: storyError } = await supabase
+        .from('stories')
+        .select()
+        .eq('id', storyId)
+        .single()
+
+      if (storyError) {
+        throw new StoryServiceError(storyError.message, storyError.code === 'PGRST116' ? 404 : 500)
+      }
+
+      if (storyRow.story_image_path) {
+        return {
+          result: await toStoryResponse({ row: storyRow, supabase }),
+          resultStoryId: storyId,
+        }
+      }
+
+      const blueprint = StoryBlueprint.parse(storyRow.blueprint)
+      const imageBase64 = await generateStoryImage(blueprint)
+      const storyImagePath = `${userId}/stories/${storyId}/banner.png`
+
+      await uploadBase64Image({
+        base64: imageBase64,
+        path: storyImagePath,
+        supabase,
+      })
+
+      const { error: assetError } = await supabase.from('generated_assets').insert({
+        bucket: GENERATED_ASSETS_BUCKET,
+        kind: 'story_image',
+        metadata: { promptType: 'storyImage' },
+        path: storyImagePath,
+        story_id: storyId,
+        user_id: userId,
+      })
+
+      if (assetError) {
+        throw new StoryServiceError(assetError.message)
+      }
+
+      const { data: updatedStoryRow, error: updateStoryError } = await supabase
+        .from('stories')
+        .update({ story_image_path: storyImagePath })
+        .eq('id', storyId)
+        .select()
+        .single()
+
+      if (updateStoryError) {
+        throw new StoryServiceError(updateStoryError.message)
+      }
+
+      return {
+        result: await toStoryResponse({ row: updatedStoryRow, supabase }),
+        resultStoryId: storyId,
+      }
+    },
+    supabase,
+    userId,
   })
-
-  if (assetError) {
-    throw new StoryServiceError(assetError.message)
-  }
-
-  const { data: updatedStoryRow, error: updateStoryError } = await supabase
-    .from('stories')
-    .update({ story_image_path: storyImagePath })
-    .eq('id', storyId)
-    .select()
-    .single()
-
-  if (updateStoryError) {
-    throw new StoryServiceError(updateStoryError.message)
-  }
-
-  return toStoryResponse({ row: updatedStoryRow, supabase })
 }
 
 export async function getPersistedStory({
@@ -318,28 +587,46 @@ export async function createPersistedQuest({
   }
 
   const sequenceNumber = (latestQuestRow?.sequence_number ?? 0) + 1
-  const recentQuestRows = await getRecentQuestRows({ storyId, supabase })
-  const continuityContext = formatContinuityContext(recentQuestRows)
-  const recommendedTask = await generateRecommendedTask({ continuityContext, story })
-  const quest = await generateQuest({ continuityContext, recommendedTask, story })
+  return runAiGenerationOnce({
+    key: `quest:create:${storyId}:after:${latestQuestRow?.id ?? 'start'}:${latestQuestRow?.status ?? 'none'}`,
+    kind: 'quest_proposal',
+    resolveExisting: async (row) => {
+      if (!row.result_quest_id) {
+        return null
+      }
 
-  const { data: questRow, error: insertQuestError } = await supabase
-    .from('quests')
-    .insert({
-      quest: quest as unknown as Json,
-      recommended_task: recommendedTask as unknown as Json,
-      sequence_number: sequenceNumber,
-      status: 'proposed',
-      story_id: storyId,
-    })
-    .select()
-    .single()
+      return getPersistedQuest({ questId: row.result_quest_id, supabase })
+    },
+    run: async () => {
+      const recentQuestRows = await getRecentQuestRows({ storyId, supabase })
+      const continuityContext = formatContinuityContext(recentQuestRows)
+      const recommendedTask = await generateRecommendedTask({ continuityContext, story })
+      const quest = await generateQuest({ continuityContext, recommendedTask, story })
 
-  if (insertQuestError) {
-    throw new StoryServiceError(insertQuestError.message)
-  }
+      const { data: questRow, error: insertQuestError } = await supabase
+        .from('quests')
+        .insert({
+          quest: quest as unknown as Json,
+          recommended_task: recommendedTask as unknown as Json,
+          sequence_number: sequenceNumber,
+          status: 'proposed',
+          story_id: storyId,
+        })
+        .select()
+        .single()
 
-  return toQuestResponse({ row: questRow, supabase })
+      if (insertQuestError) {
+        throw new StoryServiceError(insertQuestError.message)
+      }
+
+      return {
+        result: await toQuestResponse({ row: questRow, supabase }),
+        resultQuestId: questRow.id,
+      }
+    },
+    supabase,
+    userId: storyRow.user_id,
+  })
 }
 
 export async function getPersistedQuest({
@@ -436,37 +723,55 @@ export async function completePersistedQuest({
   assertStoryCanReceiveQuest(story)
   const recommendedTask = RecommendedTask.parse(existingQuestRow.recommended_task)
   const quest = Quest.parse(existingQuestRow.quest)
-  const recentQuestRows = await getRecentQuestRows({ storyId: story.id, supabase })
-  const continuityContext = formatContinuityContext(
-    recentQuestRows.filter((row) => row.id !== questId),
-  )
-  const resultText = await generateQuestResultText({
-    continuityContext,
-    feedback,
-    outcomeStatus,
-    quest,
-    recommendedTask,
-    story,
+  return runAiGenerationOnce({
+    key: `quest:complete:${questId}:${outcomeStatus}`,
+    kind: 'quest_result_text',
+    resolveExisting: async (row) => {
+      if (!row.result_quest_id) {
+        return null
+      }
+
+      return getPersistedQuest({ questId: row.result_quest_id, supabase })
+    },
+    run: async () => {
+      const recentQuestRows = await getRecentQuestRows({ storyId: story.id, supabase })
+      const continuityContext = formatContinuityContext(
+        recentQuestRows.filter((row) => row.id !== questId),
+      )
+      const resultText = await generateQuestResultText({
+        continuityContext,
+        feedback,
+        outcomeStatus,
+        quest,
+        recommendedTask,
+        story,
+      })
+      const completedAt = new Date().toISOString()
+      const { data: completedQuestRow, error: updateError } = await supabase
+        .from('quests')
+        .update({
+          completed_at: completedAt,
+          feedback: feedback as unknown as Json,
+          outcome_status: outcomeStatus,
+          result_text: resultText as unknown as Json,
+          status: outcomeStatus,
+        })
+        .eq('id', questId)
+        .select()
+        .single()
+
+      if (updateError) {
+        throw new StoryServiceError(updateError.message)
+      }
+
+      return {
+        result: await toQuestResponse({ row: completedQuestRow, supabase }),
+        resultQuestId: questId,
+      }
+    },
+    supabase,
+    userId: storyRow.user_id,
   })
-  const completedAt = new Date().toISOString()
-  const { data: completedQuestRow, error: updateError } = await supabase
-    .from('quests')
-    .update({
-      completed_at: completedAt,
-      feedback: feedback as unknown as Json,
-      outcome_status: outcomeStatus,
-      result_text: resultText as unknown as Json,
-      status: outcomeStatus,
-    })
-    .eq('id', questId)
-    .select()
-    .single()
-
-  if (updateError) {
-    throw new StoryServiceError(updateError.message)
-  }
-
-  return toQuestResponse({ row: completedQuestRow, supabase })
 }
 
 export async function generatePersistedQuestResultImage({
@@ -478,78 +783,99 @@ export async function generatePersistedQuestResultImage({
   supabase: ServerSupabase
   userId: string
 }) {
-  const { data: questRow, error: questError } = await supabase
-    .from('quests')
-    .select()
-    .eq('id', questId)
-    .single()
-
-  if (questError) {
-    throw new StoryServiceError(questError.message, questError.code === 'PGRST116' ? 404 : 500)
-  }
-
-  if (questRow.result_image_path) {
-    return toQuestResponse({ row: questRow, supabase })
-  }
-
-  if (!questRow.result_text || !questRow.outcome_status) {
-    throw new StoryServiceError('Quest result text is required before generating an image.', 409)
-  }
-
-  const { data: storyRow, error: storyError } = await supabase
-    .from('stories')
-    .select()
-    .eq('id', questRow.story_id)
-    .single()
-
-  if (storyError) {
-    throw new StoryServiceError(storyError.message, storyError.code === 'PGRST116' ? 404 : 500)
-  }
-
-  const story = mapStoryRow(storyRow, null)
-  const quest = Quest.parse(questRow.quest)
-  const resultText = QuestResultText.parse(questRow.result_text)
-  const outcomeStatus = questRow.outcome_status
-  const resultImagePath = `${userId}/stories/${story.id}/quests/${questId}/result.png`
-  const imageBase64 = await generateQuestResultImage({
-    outcomeStatus,
-    quest,
-    resultText,
-    story,
-  })
-
-  await uploadBase64Image({
-    base64: imageBase64,
-    path: resultImagePath,
-    supabase,
-  })
-
-  const { error: assetError } = await supabase.from('generated_assets').insert({
-    bucket: GENERATED_ASSETS_BUCKET,
+  return runAiGenerationOnce({
+    key: `quest:image:${questId}`,
     kind: 'quest_result_image',
-    metadata: { promptType: 'questResultImage' },
-    path: resultImagePath,
-    quest_id: questId,
-    story_id: story.id,
-    user_id: userId,
+    resolveExisting: async (row) => {
+      if (!row.result_quest_id) {
+        return null
+      }
+
+      return getPersistedQuest({ questId: row.result_quest_id, supabase })
+    },
+    run: async () => {
+      const { data: questRow, error: questError } = await supabase
+        .from('quests')
+        .select()
+        .eq('id', questId)
+        .single()
+
+      if (questError) {
+        throw new StoryServiceError(questError.message, questError.code === 'PGRST116' ? 404 : 500)
+      }
+
+      if (questRow.result_image_path) {
+        return {
+          result: await toQuestResponse({ row: questRow, supabase }),
+          resultQuestId: questId,
+        }
+      }
+
+      if (!questRow.result_text || !questRow.outcome_status) {
+        throw new StoryServiceError('Quest result text is required before generating an image.', 409)
+      }
+
+      const { data: storyRow, error: storyError } = await supabase
+        .from('stories')
+        .select()
+        .eq('id', questRow.story_id)
+        .single()
+
+      if (storyError) {
+        throw new StoryServiceError(storyError.message, storyError.code === 'PGRST116' ? 404 : 500)
+      }
+
+      const story = mapStoryRow(storyRow, null)
+      const quest = Quest.parse(questRow.quest)
+      const resultText = QuestResultText.parse(questRow.result_text)
+      const outcomeStatus = questRow.outcome_status
+      const resultImagePath = `${userId}/stories/${story.id}/quests/${questId}/result.png`
+      const imageBase64 = await generateQuestResultImage({
+        outcomeStatus,
+        quest,
+        resultText,
+        story,
+      })
+
+      await uploadBase64Image({
+        base64: imageBase64,
+        path: resultImagePath,
+        supabase,
+      })
+
+      const { error: assetError } = await supabase.from('generated_assets').insert({
+        bucket: GENERATED_ASSETS_BUCKET,
+        kind: 'quest_result_image',
+        metadata: { promptType: 'questResultImage' },
+        path: resultImagePath,
+        quest_id: questId,
+        story_id: story.id,
+        user_id: userId,
+      })
+
+      if (assetError) {
+        throw new StoryServiceError(assetError.message)
+      }
+
+      const { data: questRowWithImage, error: imageUpdateError } = await supabase
+        .from('quests')
+        .update({ result_image_path: resultImagePath })
+        .eq('id', questId)
+        .select()
+        .single()
+
+      if (imageUpdateError) {
+        throw new StoryServiceError(imageUpdateError.message)
+      }
+
+      return {
+        result: await toQuestResponse({ row: questRowWithImage, supabase }),
+        resultQuestId: questId,
+      }
+    },
+    supabase,
+    userId,
   })
-
-  if (assetError) {
-    throw new StoryServiceError(assetError.message)
-  }
-
-  const { data: questRowWithImage, error: imageUpdateError } = await supabase
-    .from('quests')
-    .update({ result_image_path: resultImagePath })
-    .eq('id', questId)
-    .select()
-    .single()
-
-  if (imageUpdateError) {
-    throw new StoryServiceError(imageUpdateError.message)
-  }
-
-  return toQuestResponse({ row: questRowWithImage, supabase })
 }
 
 export async function rejectPersistedQuest({
