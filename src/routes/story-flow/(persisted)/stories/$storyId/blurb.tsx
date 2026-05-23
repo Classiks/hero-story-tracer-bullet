@@ -12,10 +12,11 @@ import { useGenerateStoryImageMutation, useStoryQuery } from '#/modules/story-fl
 import type { PersistedStory } from '#/modules/story-flow/persisted-types'
 import { useOnboardingStore } from '#/state/onboarding'
 import { useAppNavigate } from '#/lib/use-app-navigate'
+import { useRefetchOnReturn } from '#/lib/use-refetch-on-return'
 import { createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Crown, Flame, Gem, ScrollText, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 import { playSoundEffect } from '#/lib/sound-effects'
@@ -30,6 +31,7 @@ function RouteComponent() {
   const navigate = useAppNavigate()
   const { storyId } = Route.useParams()
   const storyQuery = useStoryQuery(storyId)
+  const { refetch: refetchStory } = storyQuery
   const setName = useOnboardingStore((state) => state.setName)
   const setGoal = useOnboardingStore((state) => state.setGoal)
   const setMainProblem = useOnboardingStore((state) => state.setMainProblem)
@@ -87,7 +89,7 @@ function RouteComponent() {
             </div>
           )}
 
-          {story && <StoryPresentation story={story} />}
+          {story && <StoryPresentation onRefetchStory={refetchStory} story={story} />}
         </motion.div>
       </main>
     </StoryFrame>
@@ -110,12 +112,26 @@ function StoryLoading() {
   )
 }
 
-function StoryPresentation({ story }: { story: PersistedStory }) {
+function StoryPresentation({
+  onRefetchStory,
+  story,
+}: {
+  onRefetchStory: () => void
+  story: PersistedStory
+}) {
   const navigate = useAppNavigate()
   const generateStoryImage = useGenerateStoryImageMutation(story.id)
   const blueprint = story.blueprint
   const imageMissing = !story.storyImageUrl
-  const { isError: imageError, isIdle: imageIdle, mutate: generateImage } = generateStoryImage
+  const {
+    isError: imageError,
+    isIdle: imageIdle,
+    isPending: imageIsPending,
+    mutate: generateImage,
+  } = generateStoryImage
+  const refetchMissingImage = useCallback(() => {
+    onRefetchStory()
+  }, [onRefetchStory])
 
   useEffect(() => {
     if (imageMissing && imageIdle) {
@@ -123,11 +139,18 @@ function StoryPresentation({ story }: { story: PersistedStory }) {
     }
   }, [generateImage, imageIdle, imageMissing])
 
+  useRefetchOnReturn({
+    enabled: imageMissing,
+    refetch: refetchMissingImage,
+  })
+
   return (
     <div className="mt-10 pb-5">
       <StoryImageBanner
         imageError={imageError}
+        imageIsPending={imageIsPending}
         imageUrl={story.storyImageUrl}
+        onRetryImage={generateImage}
         title={blueprint.title}
       />
 
@@ -189,11 +212,15 @@ function StoryPresentation({ story }: { story: PersistedStory }) {
 
 function StoryImageBanner({
   imageError,
+  imageIsPending,
   imageUrl,
+  onRetryImage,
   title,
 }: {
   imageError: boolean
+  imageIsPending: boolean
   imageUrl: string | null
+  onRetryImage: () => void
   title: string
 }) {
   return (
@@ -203,7 +230,11 @@ function StoryImageBanner({
       animate={{ opacity: 1, y: 0 }}
     >
       {!imageUrl && (
-        <GeneratedImagePlaceholder error={imageError} />
+        <GeneratedImagePlaceholder
+          error={imageError}
+          isRetrying={imageIsPending}
+          onRetry={onRetryImage}
+        />
       )}
 
       {imageUrl && (

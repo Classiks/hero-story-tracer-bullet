@@ -1,5 +1,6 @@
 import { cn } from '#/lib/utils'
-import { ImageIcon, Sparkles } from 'lucide-react'
+import { Button } from '#/components/ui/button'
+import { ImageIcon, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { RotatingLoadingText } from '#/components/story-flow/rotating-loading-text'
 
@@ -29,9 +30,13 @@ const pendingMessages = [
 export function GeneratedImagePlaceholder({
   className,
   error = false,
+  isRetrying = false,
+  onRetry,
 }: {
   className?: string
   error?: boolean
+  isRetrying?: boolean
+  onRetry?: () => void
 }) {
   return (
     <div
@@ -74,8 +79,21 @@ export function GeneratedImagePlaceholder({
           <>
             <p className="font-semibold text-foreground">The scene could not be drawn.</p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              The story text is ready, and the image can be tried again by reloading this page.
+              The story text is ready. Try drawing the image again.
             </p>
+            {onRetry && (
+              <Button
+                className="mt-4"
+                disabled={isRetrying}
+                onClick={onRetry}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {isRetrying ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                Try again
+              </Button>
+            )}
           </>
         ) : (
           <RotatingLoadingText messages={pendingMessages} />

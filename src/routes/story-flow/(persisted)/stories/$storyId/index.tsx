@@ -228,6 +228,26 @@ function StoryBlurbDialog({ story }: { story: PersistedStory }) {
               <p key={paragraph}>{paragraph}</p>
             ))}
         </div>
+
+        <Collapsible>
+          <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-md py-1 text-left text-[0.68rem] font-bold uppercase tracking-wider text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180">
+            <span>Story setup details</span>
+            <ChevronDown className="pointer-events-none size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:text-foreground" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+            <div className="grid gap-4 pt-4">
+              <ContextDetail label="Name" value={story.name} />
+              <ContextDetail label="Goal" value={story.goal} />
+              <ContextDetail label="Challenge" value={story.challenge} />
+              <ContextDetail label="Hero metaphor" value={story.blueprint.metaphors.hero} />
+              <ContextDetail
+                label="Challenge metaphor"
+                value={story.blueprint.metaphors.enemy}
+              />
+              <ContextDetail label="Reward metaphor" value={story.blueprint.metaphors.reward} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </DialogContent>
     </Dialog>
   )

@@ -11,10 +11,11 @@ import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-ima
 import { questOutcomeSucceeded, type QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
 import { useGenerateQuestResultImageMutation, useQuestQuery } from '#/modules/story-flow/story-api-client'
 import { useAppNavigate } from '#/lib/use-app-navigate'
+import { useRefetchOnReturn } from '#/lib/use-refetch-on-return'
 import { createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, ArrowRight, Award, CircleSlash, ScrollText } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
 import { Route as StoryHubRoute } from '#/routes/story-flow/(persisted)/stories/$storyId'
 import { Route as NextRoute } from '#/routes/story-flow/(persisted)/stories/$storyId/quest/proposal'
@@ -27,19 +28,33 @@ function RouteComponent() {
   const navigate = useAppNavigate()
   const { questId, storyId } = Route.useParams()
   const questQuery = useQuestQuery(questId)
+  const { refetch: refetchQuest } = questQuery
   const quest = questQuery.data?.quest
   const outcomeStatus = quest?.outcomeStatus
   const outcomeSucceeded = outcomeStatus ? questOutcomeSucceeded(outcomeStatus) : false
   const note = quest?.feedback.note?.trim()
   const generateResultImage = useGenerateQuestResultImageMutation(questId)
   const imageMissing = Boolean(quest?.resultText && !quest.resultImageUrl)
-  const { isError: imageError, isIdle: imageIdle, mutate: generateImage } = generateResultImage
+  const {
+    isError: imageError,
+    isIdle: imageIdle,
+    isPending: imageIsPending,
+    mutate: generateImage,
+  } = generateResultImage
+  const refetchMissingImage = useCallback(() => {
+    void refetchQuest()
+  }, [refetchQuest])
 
   useEffect(() => {
     if (imageMissing && imageIdle) {
       generateImage()
     }
   }, [generateImage, imageIdle, imageMissing])
+
+  useRefetchOnReturn({
+    enabled: imageMissing,
+    refetch: refetchMissingImage,
+  })
 
   return (
     <StoryFrame>
@@ -86,7 +101,9 @@ function RouteComponent() {
 
             <QuestResultImage
               imageError={imageError}
+              imageIsPending={imageIsPending}
               imageUrl={quest.resultImageUrl}
+              onRetryImage={generateImage}
               title={quest.resultText.title}
             />
 
@@ -253,11 +270,15 @@ function FeedbackNote({ note }: { note: string }) {
 
 function QuestResultImage({
   imageError,
+  imageIsPending,
   imageUrl,
+  onRetryImage,
   title,
 }: {
   imageError: boolean
+  imageIsPending: boolean
   imageUrl: string | null
+  onRetryImage: () => void
   title: string
 }) {
   return (
@@ -268,7 +289,11 @@ function QuestResultImage({
       transition={{ delay: 0.05 }}
     >
       {!imageUrl && (
-        <GeneratedImagePlaceholder error={imageError} />
+        <GeneratedImagePlaceholder
+          error={imageError}
+          isRetrying={imageIsPending}
+          onRetry={onRetryImage}
+        />
       )}
 
       {imageUrl && (
