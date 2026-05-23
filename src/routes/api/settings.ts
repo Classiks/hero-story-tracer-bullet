@@ -24,14 +24,22 @@ export const Route = createFileRoute('/api/settings')({
           const input = await request.json()
           const hasTextModel =
             typeof input === 'object' && input !== null && Object.hasOwn(input, 'textModel')
+          const hasSoundsEnabled =
+            typeof input === 'object' && input !== null && Object.hasOwn(input, 'soundsEnabled')
           const textModel = hasTextModel ? input.textModel : undefined
+          const soundsEnabled = hasSoundsEnabled ? input.soundsEnabled : undefined
 
           if (textModel !== undefined && textModel !== null && !isUserTextModel(textModel)) {
             return Response.json({ error: 'Valid textModel is required' }, { status: 400 })
           }
 
+          if (soundsEnabled !== undefined && typeof soundsEnabled !== 'boolean') {
+            return Response.json({ error: 'Valid soundsEnabled is required' }, { status: 400 })
+          }
+
           return Response.json(
             await updateUserSettings({
+              soundsEnabled,
               supabase,
               textModel,
               userId: user.id,

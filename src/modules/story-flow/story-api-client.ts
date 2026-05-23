@@ -10,8 +10,8 @@ import type {
   UpdateStoryStatusRequest,
 } from '#/modules/story-flow/persisted-types'
 import type {
-  UpdateUserSettingsRequest,
   UserSettingsResponse,
+  UpdateUserSettingsRequest,
 } from '#/modules/user-settings'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -48,6 +48,27 @@ export function useUpdateUserSettingsMutation() {
       }
 
       return (await response.json()) as UserSettingsResponse
+    },
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: ['user-settings'] })
+      const previousSettings = queryClient.getQueryData<UserSettingsResponse>(['user-settings'])
+
+      if (previousSettings) {
+        queryClient.setQueryData<UserSettingsResponse>(['user-settings'], {
+          ...previousSettings,
+          ...(input.soundsEnabled !== undefined ? { soundsEnabled: input.soundsEnabled } : {}),
+          ...(input.textModel !== undefined && input.textModel !== null
+            ? { textModel: input.textModel }
+            : {}),
+        })
+      }
+
+      return { previousSettings }
+    },
+    onError: (_error, _input, context) => {
+      if (context?.previousSettings) {
+        queryClient.setQueryData(['user-settings'], context.previousSettings)
+      }
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['user-settings'], data)

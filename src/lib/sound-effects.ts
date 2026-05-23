@@ -12,6 +12,7 @@ const pools = new Map<SoundEffect, HTMLAudioElement[]>()
 const nextPoolIndexes = new Map<SoundEffect, number>()
 let audioContext: AudioContext | null = null
 let buttonClickBufferPromise: Promise<AudioBuffer | null> | null = null
+let soundEffectsEnabled = true
 
 function createAudio(src: string) {
   const audio = new Audio(src)
@@ -118,7 +119,7 @@ function playWithAudioElement(effect: SoundEffect) {
 }
 
 export function playSoundEffect(effect: SoundEffect) {
-  if (typeof window === 'undefined') {
+  if (typeof window === 'undefined' || !soundEffectsEnabled) {
     return
   }
 
@@ -127,4 +128,8 @@ export function playSoundEffect(effect: SoundEffect) {
   }
 
   playWithAudioElement(effect)
+}
+
+export function setSoundEffectsEnabled(enabled: boolean) {
+  soundEffectsEnabled = enabled
 }

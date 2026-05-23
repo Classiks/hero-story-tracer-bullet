@@ -14,6 +14,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { TooltipProvider } from '#/components/ui/tooltip'
 import { Toaster } from '#/components/ui/sonner'
 import { SupabaseAuthBootstrap } from '#/components/supabase-auth-bootstrap'
+import { SoundSettingsSync } from '#/components/sound-settings-sync'
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -92,6 +93,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <TooltipProvider>
           <SupabaseAuthBootstrap />
+          <SoundSettingsSync />
           {children}
           <Toaster position="top-center" richColors />
         </TooltipProvider>
