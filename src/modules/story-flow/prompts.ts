@@ -36,6 +36,8 @@ User:
 Previous stories shown to this user:
 ${priorStoryContext || '- No previous stories yet.'}
 
+${createOnboardingLanguageRule()}
+
 Rules:
 - Address the user by name in the story blurb.
 - Keep the title short and punchy.
@@ -108,6 +110,8 @@ Story context:
 Story continuity context:
 ${continuityContext || '- No prior quests yet.'}
 
+${createContinuityLanguageRule()}
+
 Rules:
 - Choose exactly one next step the user can take soon.
 - Make it small enough to start without planning a whole project.
@@ -169,6 +173,8 @@ Hidden recommended task:
 
 Story continuity context:
 ${continuityContext || '- No prior quests yet.'}
+
+${createContinuityLanguageRule()}
 
 Rules:
 - quest: short in-world quest title. Do not use literal productivity terms.
@@ -257,6 +263,8 @@ Outcome:
 - Result: ${outcome}
 - User feedback note: ${userNote}
 
+${createFeedbackLanguageRule(feedback)}
+
 Rules:
 - title: short in-world title for this story beat.
 - text: 1-2 narrative in-world sentences, immersive and readable without becoming a long chapter.
@@ -335,4 +343,36 @@ function getOutcomePromptLabel(outcomeStatus: QuestOutcomeStatus) {
     case 'unresolved':
       return 'abandoned or failed'
   }
+}
+
+function createOnboardingLanguageRule() {
+  return `Output language:
+- Keep these prompt instructions in English, but write every generated string field in the user's language.
+- Infer the user's language from their Name, Goal, and Challenge inputs.
+- If those inputs contain multiple languages, use the dominant language of the Goal and Challenge.
+`
+}
+
+function createContinuityLanguageRule() {
+  return `Output language:
+- Keep these prompt instructions in English, but write every generated string field in the user's language.
+- If the Story continuity context contains a latest user feedback note, use the language of that feedback note.
+- Ignore fixed English UI labels such as "Rejected because", status names, and field labels when choosing the language.
+- If there is no user feedback note, infer the user's language from their Name, Goal, and Challenge inputs.
+`
+}
+
+function createFeedbackLanguageRule(feedback: QuestFeedback) {
+  const hasFeedbackNote = Boolean(feedback.note?.trim())
+
+  if (hasFeedbackNote) {
+    return `Output language:
+- Keep these prompt instructions in English, but write every generated string field in the user's language.
+- Use the language of the User feedback note as the output language.
+- Ignore fixed English UI labels such as "Rejected because", status names, and field labels when choosing the language.
+- If the note contains both fixed English labels and user-authored detail in another language, follow the user-authored detail.
+`
+  }
+
+  return createOnboardingLanguageRule()
 }
