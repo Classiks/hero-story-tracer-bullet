@@ -31,7 +31,7 @@ import { useAuthStore } from '#/state/auth'
 import { Brain, Circle, Loader2, Settings, Volume2, Zap } from 'lucide-react'
 
 const MODEL_ICONS = {
-  'gemini-3.1-flash-lite-preview': Zap,
+  'gemini-3.1-flash-lite': Zap,
   'gemini-3.1-pro-preview': Brain,
   'gemini-3-flash-preview': Circle,
 } as const

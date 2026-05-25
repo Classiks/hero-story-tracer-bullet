@@ -12,13 +12,13 @@ export const USER_TEXT_MODEL_OPTIONS = [
   {
     description: 'Fastest, lightest everyday mode',
     label: 'Flash Lite',
-    value: 'gemini-3.1-flash-lite-preview',
+    value: 'gemini-3.1-flash-lite',
   },
 ] as const
 
 export type UserTextModel = (typeof USER_TEXT_MODEL_OPTIONS)[number]['value']
 
-export const DEFAULT_USER_TEXT_MODEL: UserTextModel = 'gemini-3.1-flash-lite-preview'
+export const DEFAULT_USER_TEXT_MODEL: UserTextModel = 'gemini-3.1-flash-lite'
 export const DEFAULT_SOUNDS_ENABLED = true
 
 const USER_TEXT_MODELS = new Set<string>(
