@@ -45,7 +45,7 @@ export function InputDepthMeter({
       </div>
       <div className="mt-1.5 flex items-center justify-between gap-3 text-[0.68rem] font-semibold uppercase tracking-widest text-muted-foreground">
         <span>{label}</span>
-        <span>{Math.min(length, options.targetLength)}/{options.targetLength}</span>
+        <span>{Math.min(length, options.targetLength)}/{options.targetLength}+</span>
       </div>
     </div>
   )
