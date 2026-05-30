@@ -1,6 +1,14 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '#/components/ui/accordion'
 import { Button } from '#/components/ui/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '#/components/ui/dialog'
+import {
   StoryFrame,
   StoryHeading,
   StorySurface,
@@ -9,11 +17,15 @@ import {
 import { StoryRouteHeader } from '#/components/story-flow/story-route-header'
 import { GeneratedImagePlaceholder } from '#/components/story-flow/generated-image-placeholder'
 import { questOutcomeSucceeded, type QuestOutcomeStatus } from '#/modules/story-flow/quest-outcome'
-import { useGenerateQuestResultImageMutation, useQuestQuery } from '#/modules/story-flow/story-api-client'
+import {
+  useGenerateQuestResultImageMutation,
+  useQuestQuery,
+  useUpdateStoryStatusMutation,
+} from '#/modules/story-flow/story-api-client'
 import { useAppNavigate } from '#/lib/use-app-navigate'
 import { useRefetchOnReturn } from '#/lib/use-refetch-on-return'
 import { createFileRoute } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight, Award, CircleSlash, ScrollText } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Award, CheckCircle2, CircleSlash, Info, Loader2, ScrollText } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useCallback, useEffect } from 'react'
 import { Route as LandingRoute } from '#/routes/story-flow/index'
@@ -33,6 +45,9 @@ function RouteComponent() {
   const outcomeStatus = quest?.outcomeStatus
   const outcomeSucceeded = outcomeStatus ? questOutcomeSucceeded(outcomeStatus) : false
   const note = quest?.feedback.note?.trim()
+  const completionSuggestion = quest?.resultText?.completionSuggestion
+  const shouldSuggestStoryCompletion = Boolean(completionSuggestion?.shouldSuggest)
+  const updateStoryStatus = useUpdateStoryStatusMutation()
   const generateResultImage = useGenerateQuestResultImageMutation(questId)
   const imageMissing = Boolean(quest?.resultText && !quest.resultImageUrl)
   const {
@@ -129,8 +144,29 @@ function RouteComponent() {
 
             {note && <FeedbackNote note={note} />}
 
+            {shouldSuggestStoryCompletion && (
+              <StoryCompletionSuggestion
+                isCompleting={updateStoryStatus.isPending}
+                onComplete={() => {
+                  updateStoryStatus.mutate(
+                    { status: 'completed', storyId },
+                    {
+                      onSuccess: () => {
+                        void navigate({
+                          params: { storyId },
+                          to: StoryHubRoute.to,
+                        })
+                      },
+                    },
+                  )
+                }}
+                reason={completionSuggestion?.reason}
+                showError={updateStoryStatus.isError}
+              />
+            )}
+
             <Button
-              className="mt-8 w-full"
+              className={shouldSuggestStoryCompletion ? 'mt-4 w-full' : 'mt-8 w-full'}
               onClick={() =>
                 navigate({
                   params: { storyId },
@@ -162,6 +198,75 @@ function RouteComponent() {
         )}
       </main>
     </StoryFrame>
+  )
+}
+
+function StoryCompletionSuggestion({
+  isCompleting,
+  onComplete,
+  reason,
+  showError,
+}: {
+  isCompleting: boolean
+  onComplete: () => void
+  reason: string | null | undefined
+  showError: boolean
+}) {
+  return (
+    <StorySurface
+      className="mt-6 border-accent/30 bg-accent/10 p-5"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.12 }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/15 text-accent">
+          <CheckCircle2 className="size-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Story ending
+          </p>
+          <h2 className="mt-2 text-lg font-semibold leading-tight text-foreground">
+            This may be a good place to complete the story.
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Completing marks this goal arc as finished. You can restore it later if the path reopens.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <Button disabled={isCompleting} onClick={onComplete} size="hero" variant="hero">
+          {isCompleting ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
+          Complete story
+        </Button>
+
+        {reason && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button disabled={isCompleting} size="hero" variant="outline">
+                <Info />
+                Why?
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Why complete this story?</DialogTitle>
+                <DialogDescription>The narrator suggested closure based on this result.</DialogDescription>
+              </DialogHeader>
+              <p className="text-sm leading-relaxed text-foreground/85">{reason}</p>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {showError && (
+        <p className="mt-3 text-sm leading-relaxed text-destructive">
+          The story could not be completed. Try again.
+        </p>
+      )}
+    </StorySurface>
   )
 }
 

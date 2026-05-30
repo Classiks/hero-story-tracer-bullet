@@ -278,10 +278,14 @@ Rules:
 - title: short in-world title for this story beat.
 - text: 1-2 narrative in-world sentences, immersive and readable without becoming a long chapter.
 - metaphors: list the important real-world concepts and their story-world translations for this result beat.
+- completionSuggestion.shouldSuggest: true only when this result indicates the overall story arc may now be complete and the user should be invited to mark the story complete.
+- completionSuggestion.reason: short user-facing rationale for the suggestion, or null when shouldSuggest is false.
 - The first metaphors item must map the concrete quest outcome to the main story-world change in the generated text.
 - Include mappings for user feedback from the note when it materially affects the story beat.
 - If the quest was completed, show a small but meaningful change in the world.
 - If the quest was abandoned or failed, show a setback or unresolved pressure without shaming the user.
+- A completion suggestion is allowed after any outcome status when the user feedback note says or clearly implies that the real-world goal/story is done, no longer relevant, or ready to close.
+- Otherwise, suggest completion only when the continuity context and this result make the larger goal arc feel narratively resolved, not merely because one quest succeeded.
 - Treat the user note as factual feedback about how the attempt went, but do not quote it mechanically.
 - Treat the hero, challenge metaphor, and reward as canon. They are the spine of the story.
 - Build from the continuity context and the attempted quest. The beat should feel like the next chapter, not an isolated vignette.
@@ -291,7 +295,7 @@ Rules:
 - Keep the story aligned with the original world, hero, enemy, and reward.
 - Do not generate a new quest or direct next task here.
 - Do not expose hidden recommendation reasoning or literal productivity terms unless they already belong naturally in the story world.
-- The beat should make the next quest feel possible, not finished.
+- Unless completionSuggestion.shouldSuggest is true, the beat should make the next quest feel possible, not finished.
 - reasoning should briefly explain how the outcome and note shaped the generated beat.
 `
 }

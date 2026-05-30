@@ -66,7 +66,14 @@ export function createQuestResultTextSchema(options: SchemaOptions) {
     title: z.string().describe(withOutputInstructions("A short in-world title for the story beat that follows a quest attempt.", options)),
     text: z.string().describe(withOutputInstructions("A compact 1-2 sentence in-world story bite showing what changed after the quest attempt.", options)),
     reasoning: z.string().describe(withOutputInstructions("A concise explanation of how the outcome and user feedback informed the story beat.", options)),
-    metaphors: createMetaphorListSchema(options)
+    metaphors: createMetaphorListSchema(options),
+    completionSuggestion: z.object({
+      shouldSuggest: z.boolean().describe("Whether the user should be invited to mark this whole story as complete."),
+      reason: z.string().nullable().describe(withOutputInstructions("A short explanation of why this story may now be complete, or null when shouldSuggest is false.", options)),
+    }).default({
+      reason: null,
+      shouldSuggest: false,
+    }).describe("A suggestion to finish the full story arc after this quest result."),
   }).describe("A user-facing story beat generated from a quest outcome.")
 }
 

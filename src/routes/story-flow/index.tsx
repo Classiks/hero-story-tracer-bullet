@@ -35,7 +35,8 @@ function RouteComponent() {
   const resetOnboarding = useOnboardingStore((state) => state.reset)
   const stories = storiesQuery.data?.stories ?? []
   const activeStories = stories.filter((story) => story.status === 'active')
-  const archivedStories = stories.filter((story) => story.status !== 'active')
+  const completedStories = stories.filter((story) => story.status === 'completed')
+  const archivedStories = stories.filter((story) => story.status === 'archived')
 
   const startStory = () => {
     resetOnboarding()
@@ -115,11 +116,15 @@ function RouteComponent() {
                 ) : (
                   <StorySurface className="mt-3 p-4">
                     <p className="text-sm leading-relaxed text-muted-foreground">
-                      No active stories right now. Restore an archived story, or start a new one.
+                      No active stories right now. Restore a completed or archived story, or start a new one.
                     </p>
                   </StorySurface>
                 )}
               </section>
+
+              {completedStories.length > 0 && (
+                <StorySection heading="Completed stories" stories={completedStories} />
+              )}
 
               {archivedStories.length > 0 && (
                 <StorySection heading="Archive" stories={archivedStories} />
@@ -274,7 +279,7 @@ function StoryRow({ story }: { story: PersistedStory }) {
         </h3>
         <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
           {formatUpdatedAt(story.updatedAt)}
-          {story.status !== 'active' ? ` · ${story.status}` : ''}
+          {story.status !== 'active' ? ` · ${getStoryStatusLabel(story.status)}` : ''}
         </p>
       </div>
 
@@ -294,6 +299,17 @@ function StoryRow({ story }: { story: PersistedStory }) {
       </Button>
     </StorySurface>
   )
+}
+
+function getStoryStatusLabel(status: PersistedStory['status']) {
+  switch (status) {
+    case 'active':
+      return 'active'
+    case 'archived':
+      return 'archived'
+    case 'completed':
+      return 'complete'
+  }
 }
 
 function formatUpdatedAt(value: string) {

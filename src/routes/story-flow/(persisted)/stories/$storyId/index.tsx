@@ -43,6 +43,7 @@ import {
   ArrowRight,
   BookOpen,
   ChevronDown,
+  CheckCircle2,
   ImageIcon,
   Loader2,
   MoreHorizontal,
@@ -63,7 +64,8 @@ function RouteComponent() {
   const { storyId } = Route.useParams()
   const sessionQuery = useStorySessionQuery(storyId)
   const session = sessionQuery.data
-  const storyIsActive = session?.story.status === 'active'
+  const storyStatus = session?.story.status
+  const storyIsActive = storyStatus === 'active'
 
   return (
     <StoryFrame>
@@ -134,10 +136,12 @@ function RouteComponent() {
               ) : (
                 <StorySurface className="mt-6 p-4">
                   <p className="text-sm font-semibold text-foreground">
-                    This story is archived.
+                    {storyStatus === 'completed' ? 'This story is complete.' : 'This story is archived.'}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                    Restore it to active if you want to continue adding quests.
+                    {storyStatus === 'completed'
+                      ? 'Restore it if you want to reopen the path and add more quests.'
+                      : 'Restore it to active if you want to continue adding quests.'}
                   </p>
                 </StorySurface>
               )}
@@ -285,13 +289,22 @@ function StoryLifecycleMenu({ story }: { story: PersistedStory }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           {storyIsActive ? (
-            <DropdownMenuItem
-              disabled={updateStatus.isPending}
-              onSelect={() => updateStoryStatus('archived')}
-            >
-              <Archive />
-              Archive story
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem
+                disabled={updateStatus.isPending}
+                onSelect={() => updateStoryStatus('completed')}
+              >
+                <CheckCircle2 />
+                Complete story
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={updateStatus.isPending}
+                onSelect={() => updateStoryStatus('archived')}
+              >
+                <Archive />
+                Archive story
+              </DropdownMenuItem>
+            </>
           ) : (
             <DropdownMenuItem
               disabled={updateStatus.isPending}
