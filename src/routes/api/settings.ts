@@ -1,5 +1,5 @@
 import { SupabaseAuthError, requireSupabaseUser } from '#/lib/supabase-server'
-import { isUserTextModel } from '#/modules/user-settings'
+import { isUserLanguage, isUserTextModel } from '#/modules/user-settings'
 import {
   getUserSettings,
   updateUserSettings,
@@ -26,11 +26,18 @@ export const Route = createFileRoute('/api/settings')({
             typeof input === 'object' && input !== null && Object.hasOwn(input, 'textModel')
           const hasSoundsEnabled =
             typeof input === 'object' && input !== null && Object.hasOwn(input, 'soundsEnabled')
+          const hasLanguage =
+            typeof input === 'object' && input !== null && Object.hasOwn(input, 'language')
           const textModel = hasTextModel ? input.textModel : undefined
           const soundsEnabled = hasSoundsEnabled ? input.soundsEnabled : undefined
+          const language = hasLanguage ? input.language : undefined
 
           if (textModel !== undefined && textModel !== null && !isUserTextModel(textModel)) {
             return Response.json({ error: 'Valid textModel is required' }, { status: 400 })
+          }
+
+          if (language !== undefined && language !== null && !isUserLanguage(language)) {
+            return Response.json({ error: 'Valid language is required' }, { status: 400 })
           }
 
           if (soundsEnabled !== undefined && typeof soundsEnabled !== 'boolean') {
@@ -39,6 +46,7 @@ export const Route = createFileRoute('/api/settings')({
 
           return Response.json(
             await updateUserSettings({
+              language,
               soundsEnabled,
               supabase,
               textModel,

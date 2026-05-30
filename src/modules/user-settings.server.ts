@@ -1,9 +1,12 @@
 import type { createServerSupabaseClient } from '#/lib/supabase-server'
 import { DEFAULT__MODEL_TEXT } from '#/modules/ai/constants'
 import {
+  isUserLanguage,
   isUserTextModel,
+  resolveUserLanguage,
   resolveSoundsEnabled,
   resolveUserTextModel,
+  type UserLanguage,
   type UserSettingsResponse,
   type UserTextModel,
 } from '#/modules/user-settings'
@@ -28,7 +31,7 @@ export async function getUserSettings({
 }): Promise<UserSettingsResponse> {
   const { data, error } = await supabase
     .from('user_settings')
-    .select('text_model, sounds_enabled')
+    .select('text_model, sounds_enabled, language')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -37,21 +40,22 @@ export async function getUserSettings({
   }
 
   return {
+    language: resolveUserLanguage(data?.language),
     soundsEnabled: resolveSoundsEnabled(data?.sounds_enabled),
     textModel: resolveUserTextModel(data?.text_model ?? DEFAULT__MODEL_TEXT),
   }
 }
 
-export async function getResolvedUserTextModel({
+export async function getResolvedUserTextGenerationSettings({
   supabase,
   userId,
 }: {
   supabase: ServerSupabase
   userId: string
-}): Promise<UserTextModel> {
+}): Promise<{ language: UserLanguage; textModel: UserTextModel }> {
   const { data, error } = await supabase
     .from('user_settings')
-    .select('text_model')
+    .select('text_model, language')
     .eq('user_id', userId)
     .maybeSingle()
 
@@ -59,15 +63,20 @@ export async function getResolvedUserTextModel({
     throw new UserSettingsError(error.message)
   }
 
-  return resolveUserTextModel(data?.text_model ?? DEFAULT__MODEL_TEXT)
+  return {
+    language: resolveUserLanguage(data?.language),
+    textModel: resolveUserTextModel(data?.text_model ?? DEFAULT__MODEL_TEXT),
+  }
 }
 
 export async function updateUserSettings({
+  language,
   soundsEnabled,
   supabase,
   textModel,
   userId,
 }: {
+  language?: UserLanguage | null
   soundsEnabled?: boolean
   supabase: ServerSupabase
   textModel?: UserTextModel | null
@@ -77,7 +86,12 @@ export async function updateUserSettings({
     throw new UserSettingsError('Valid text model is required.', 400)
   }
 
+  if (language !== undefined && language !== null && !isUserLanguage(language)) {
+    throw new UserSettingsError('Valid language is required.', 400)
+  }
+
   const values = {
+    ...(language !== undefined ? { language: resolveUserLanguage(language) } : {}),
     ...(soundsEnabled !== undefined ? { sounds_enabled: soundsEnabled } : {}),
     ...(textModel !== undefined ? { text_model: textModel } : {}),
     user_id: userId,
@@ -86,7 +100,7 @@ export async function updateUserSettings({
   const { data, error } = await supabase
     .from('user_settings')
     .upsert(values, { onConflict: 'user_id' })
-    .select('text_model, sounds_enabled')
+    .select('text_model, sounds_enabled, language')
     .single()
 
   if (error) {
@@ -94,6 +108,7 @@ export async function updateUserSettings({
   }
 
   return {
+    language: resolveUserLanguage(data.language),
     soundsEnabled: resolveSoundsEnabled(data.sounds_enabled),
     textModel: resolveUserTextModel(data.text_model ?? DEFAULT__MODEL_TEXT),
   }

@@ -208,6 +208,7 @@ export type Database = {
         Row: {
           user_id: string
           text_model: string | null
+          language: string
           sounds_enabled: boolean
           created_at: string
           updated_at: string
@@ -215,6 +216,7 @@ export type Database = {
         Insert: {
           user_id: string
           text_model?: string | null
+          language?: string
           sounds_enabled?: boolean
           created_at?: string
           updated_at?: string
@@ -222,6 +224,7 @@ export type Database = {
         Update: {
           user_id?: string
           text_model?: string | null
+          language?: string
           sounds_enabled?: boolean
           created_at?: string
           updated_at?: string

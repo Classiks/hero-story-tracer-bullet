@@ -10,15 +10,18 @@ import {
   type QuestFeedback,
   type QuestOutcomeStatus,
 } from '#/modules/story-flow/quest-outcome'
+import { getUserLanguagePromptName, type UserLanguage } from '#/modules/user-settings'
 
 export function createStoryBlueprintPrompt({
   challenge,
   goal,
+  language,
   name,
   priorStoryContext,
 }: {
   challenge: string
   goal: string
+  language: UserLanguage
   name: string
   priorStoryContext?: string
 }) {
@@ -36,7 +39,7 @@ User:
 Previous stories shown to this user:
 ${priorStoryContext || '- No previous stories yet.'}
 
-${createStoryInputLanguageRule()}
+${createOutputLanguageRule({ language })}
 
 Rules:
 - Address the user by name in the story blurb.
@@ -80,12 +83,14 @@ export function createRecommendedTaskPrompt({
   challenge,
   continuityContext,
   goal,
+  language,
   name,
   storyBlueprint,
 }: {
   challenge: string
   continuityContext?: string
   goal: string
+  language: UserLanguage
   name: string
   storyBlueprint: IStoryBlueprint
 }) {
@@ -110,7 +115,7 @@ Story context:
 Story continuity context:
 ${continuityContext || '- No prior quests yet.'}
 
-${createStoryInputLanguageRule()}
+${createOutputLanguageRule({ language })}
 
 Rules:
 - Choose exactly one next step the user can take soon.
@@ -132,6 +137,7 @@ export function createQuestPrompt({
   challenge,
   continuityContext,
   goal,
+  language,
   name,
   storyBlueprint,
   task,
@@ -139,6 +145,7 @@ export function createQuestPrompt({
   challenge: string
   continuityContext?: string
   goal: string
+  language: UserLanguage
   name: string
   storyBlueprint: IStoryBlueprint
   task: IRecommendedTask
@@ -174,7 +181,7 @@ Hidden recommended task:
 Story continuity context:
 ${continuityContext || '- No prior quests yet.'}
 
-${createStoryInputLanguageRule()}
+${createOutputLanguageRule({ language })}
 
 Rules:
 - quest: short in-world quest title. Do not use literal productivity terms.
@@ -211,6 +218,7 @@ export function createQuestResultTextPrompt({
   continuityContext,
   feedback,
   goal,
+  language,
   name,
   outcomeStatus,
   quest,
@@ -221,6 +229,7 @@ export function createQuestResultTextPrompt({
   continuityContext?: string
   feedback: QuestFeedback
   goal: string
+  language: UserLanguage
   name: string
   outcomeStatus: QuestOutcomeStatus
   quest: IQuestProposal['quest'] | IQuest
@@ -263,7 +272,7 @@ Outcome:
 - Result: ${outcome}
 - User feedback note: ${userNote}
 
-${createStoryInputLanguageRule()}
+${createOutputLanguageRule({ language })}
 
 Rules:
 - title: short in-world title for this story beat.
@@ -345,12 +354,12 @@ function getOutcomePromptLabel(outcomeStatus: QuestOutcomeStatus) {
   }
 }
 
-function createStoryInputLanguageRule() {
+export function createOutputLanguageRule({ language }: { language: UserLanguage }) {
+  const promptName = getUserLanguagePromptName(language)
+
   return `Output language:
-- Default to English for every generated string field.
-- Switch to another language only when the user's Goal and/or Challenge are clearly and predominantly written in that language.
-- Treat the user's Name as weak language evidence; a name alone must never cause a non-English output language.
-- If the language evidence is mixed, ambiguous, very short, or mostly English, write the output in English.
-- Use Story context, Story continuity context, prior generated text, status names, fixed English UI labels such as "Rejected because", and User feedback note as content only, not as language-selection evidence.
+- Write every generated string field in ${promptName}.
+- The selected language setting overrides the language of the user's Goal, Challenge, Name, prior generated text, and feedback note.
+- Use Story context, Story continuity context, prior generated text, status names, fixed English UI labels such as "Rejected because", and User feedback note as content references only, not as language-selection evidence.
 `
 }

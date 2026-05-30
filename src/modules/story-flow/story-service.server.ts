@@ -8,6 +8,10 @@ import {
   QuestResultText,
   RecommendedTask,
   StoryBlueprint,
+  createQuestResultTextSchema,
+  createQuestSchema,
+  createRecommendedTaskSchema,
+  createStoryBlueprintSchema,
   type IQuest,
   type IQuestResultText,
   type IRecommendedTask,
@@ -29,8 +33,8 @@ import type {
   StoryProgress,
   StoryStatus,
 } from '#/modules/story-flow/persisted-types'
-import type { UserTextModel } from '#/modules/user-settings'
-import { getResolvedUserTextModel } from '#/modules/user-settings.server'
+import type { UserLanguage, UserTextModel } from '#/modules/user-settings'
+import { getResolvedUserTextGenerationSettings } from '#/modules/user-settings.server'
 
 const GENERATED_ASSETS_BUCKET = 'generated-assets'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
@@ -290,6 +294,8 @@ export async function createPersistedStory({
   supabase: ServerSupabase
   userId: string
 }) {
+  const textSettings = await getResolvedUserTextGenerationSettings({ supabase, userId })
+
   return runAiGenerationOnce({
     key: `story:create:${clientRequestId}`,
     kind: 'story_blueprint',
@@ -303,11 +309,11 @@ export async function createPersistedStory({
     run: async () => {
       const storyId = crypto.randomUUID()
       const priorStoryContext = await getPriorStoryContext({ supabase, userId })
-      const textModel = await getResolvedUserTextModel({ supabase, userId })
       const blueprint = await generateStoryBlueprint({
         challenge,
         goal,
-        model: textModel,
+        language: textSettings.language,
+        model: textSettings.textModel,
         name,
         priorStoryContext,
       })
@@ -597,6 +603,11 @@ export async function createPersistedQuest({
   }
 
   const sequenceNumber = (latestQuestRow?.sequence_number ?? 0) + 1
+  const textSettings = await getResolvedUserTextGenerationSettings({
+    supabase,
+    userId: storyRow.user_id,
+  })
+
   return runAiGenerationOnce({
     key: `quest:create:${storyId}:after:${latestQuestRow?.id ?? 'start'}:${latestQuestRow?.status ?? 'none'}`,
     kind: 'quest_proposal',
@@ -608,17 +619,18 @@ export async function createPersistedQuest({
       return getPersistedQuest({ questId: row.result_quest_id, supabase })
     },
     run: async () => {
-      const textModel = await getResolvedUserTextModel({ supabase, userId: storyRow.user_id })
       const recentQuestRows = await getRecentQuestRows({ storyId, supabase })
       const continuityContext = formatContinuityContext(recentQuestRows)
       const recommendedTask = await generateRecommendedTask({
         continuityContext,
-        model: textModel,
+        language: textSettings.language,
+        model: textSettings.textModel,
         story,
       })
       const quest = await generateQuest({
         continuityContext,
-        model: textModel,
+        language: textSettings.language,
+        model: textSettings.textModel,
         recommendedTask,
         story,
       })
@@ -743,6 +755,11 @@ export async function completePersistedQuest({
   assertStoryCanReceiveQuest(story)
   const recommendedTask = RecommendedTask.parse(existingQuestRow.recommended_task)
   const quest = Quest.parse(existingQuestRow.quest)
+  const textSettings = await getResolvedUserTextGenerationSettings({
+    supabase,
+    userId: storyRow.user_id,
+  })
+
   return runAiGenerationOnce({
     key: `quest:complete:${questId}:${outcomeStatus}`,
     kind: 'quest_result_text',
@@ -754,7 +771,6 @@ export async function completePersistedQuest({
       return getPersistedQuest({ questId: row.result_quest_id, supabase })
     },
     run: async () => {
-      const textModel = await getResolvedUserTextModel({ supabase, userId: storyRow.user_id })
       const recentQuestRows = await getRecentQuestRows({ storyId: story.id, supabase })
       const continuityContext = formatContinuityContext(
         recentQuestRows.filter((row) => row.id !== questId),
@@ -762,7 +778,8 @@ export async function completePersistedQuest({
       const resultText = await generateQuestResultText({
         continuityContext,
         feedback,
-        model: textModel,
+        language: textSettings.language,
+        model: textSettings.textModel,
         outcomeStatus,
         quest,
         recommendedTask,
@@ -1014,12 +1031,14 @@ function formatPriorStoryContext(
 async function generateStoryBlueprint({
   challenge,
   goal,
+  language,
   model,
   name,
   priorStoryContext,
 }: {
   challenge: string
   goal: string
+  language: UserLanguage
   model: UserTextModel
   name: string
   priorStoryContext: string
@@ -1029,8 +1048,8 @@ async function generateStoryBlueprint({
   }
 
   return generateData(
-    createStoryBlueprintPrompt({ challenge, goal, name, priorStoryContext }),
-    StoryBlueprint,
+    createStoryBlueprintPrompt({ challenge, goal, language, name, priorStoryContext }),
+    createStoryBlueprintSchema({ language }),
     { model },
   )
 }
@@ -1049,10 +1068,12 @@ async function generateStoryImage(blueprint: IStoryBlueprint) {
 
 async function generateRecommendedTask({
   continuityContext,
+  language,
   model,
   story,
 }: {
   continuityContext: string
+  language: UserLanguage
   model: UserTextModel
   story: PersistedStory
 }) {
@@ -1065,21 +1086,24 @@ async function generateRecommendedTask({
       challenge: story.challenge,
       continuityContext,
       goal: story.goal,
+      language,
       name: story.name,
       storyBlueprint: story.blueprint,
     }),
-    RecommendedTask,
+    createRecommendedTaskSchema({ language }),
     { model },
   )
 }
 
 async function generateQuest({
   continuityContext,
+  language,
   model,
   recommendedTask,
   story,
 }: {
   continuityContext: string
+  language: UserLanguage
   model: UserTextModel
   recommendedTask: IRecommendedTask
   story: PersistedStory
@@ -1093,11 +1117,12 @@ async function generateQuest({
       challenge: story.challenge,
       continuityContext,
       goal: story.goal,
+      language,
       name: story.name,
       storyBlueprint: story.blueprint,
       task: recommendedTask,
     }),
-    Quest,
+    createQuestSchema({ language }),
     { model },
   )
 }
@@ -1105,6 +1130,7 @@ async function generateQuest({
 async function generateQuestResultText({
   continuityContext,
   feedback,
+  language,
   model,
   outcomeStatus,
   quest,
@@ -1113,6 +1139,7 @@ async function generateQuestResultText({
 }: {
   continuityContext: string
   feedback: QuestFeedback
+  language: UserLanguage
   model: UserTextModel
   outcomeStatus: QuestOutcomeStatus
   quest: IQuest
@@ -1129,13 +1156,14 @@ async function generateQuestResultText({
       continuityContext,
       feedback,
       goal: story.goal,
+      language,
       name: story.name,
       outcomeStatus,
       quest,
       storyBlueprint: story.blueprint,
       task: recommendedTask,
     }),
-    QuestResultText,
+    createQuestResultTextSchema({ language }),
     { model },
   )
 }

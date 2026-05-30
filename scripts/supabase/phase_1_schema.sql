@@ -82,6 +82,7 @@ create table if not exists public.ai_generations (
 create table if not exists public.user_settings (
   user_id uuid primary key references auth.users(id) on delete cascade,
   text_model text,
+  language text not null default 'en',
   sounds_enabled boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -89,6 +90,9 @@ create table if not exists public.user_settings (
 
 alter table public.user_settings
 add column if not exists sounds_enabled boolean not null default true;
+
+alter table public.user_settings
+add column if not exists language text not null default 'en';
 
 create index if not exists stories_user_id_idx on public.stories(user_id);
 create index if not exists stories_user_status_idx on public.stories(user_id, status);

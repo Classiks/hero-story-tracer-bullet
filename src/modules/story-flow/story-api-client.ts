@@ -56,6 +56,9 @@ export function useUpdateUserSettingsMutation() {
       if (previousSettings) {
         queryClient.setQueryData<UserSettingsResponse>(['user-settings'], {
           ...previousSettings,
+          ...(input.language !== undefined && input.language !== null
+            ? { language: input.language }
+            : {}),
           ...(input.soundsEnabled !== undefined ? { soundsEnabled: input.soundsEnabled } : {}),
           ...(input.textModel !== undefined && input.textModel !== null
             ? { textModel: input.textModel }

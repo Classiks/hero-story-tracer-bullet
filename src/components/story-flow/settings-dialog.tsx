@@ -22,18 +22,28 @@ import {
   useUserSettingsQuery,
 } from '#/modules/story-flow/story-api-client'
 import {
+  DEFAULT_USER_LANGUAGE,
   DEFAULT_USER_TEXT_MODEL,
   DEFAULT_SOUNDS_ENABLED,
+  isUserLanguage,
   isUserTextModel,
+  USER_LANGUAGE_OPTIONS,
   USER_TEXT_MODEL_OPTIONS,
 } from '#/modules/user-settings'
 import { useAuthStore } from '#/state/auth'
 import { Brain, Circle, Loader2, Settings, Volume2, Zap } from 'lucide-react'
+import deFlag from 'flag-icons/flags/4x3/de.svg?url'
+import gbFlag from 'flag-icons/flags/4x3/gb.svg?url'
 
 const MODEL_ICONS = {
   'gemini-3.1-flash-lite': Zap,
   'gemini-3.1-pro-preview': Brain,
   'gemini-3-flash-preview': Circle,
+} as const
+
+const LANGUAGE_FLAGS = {
+  de: deFlag,
+  en: gbFlag,
 } as const
 
 export function SettingsDialog() {
@@ -42,6 +52,7 @@ export function SettingsDialog() {
   const settingsQuery = useUserSettingsQuery({ enabled: Boolean(user) })
   const updateSettings = useUpdateUserSettingsMutation()
   const selectedModel = settingsQuery.data?.textModel ?? DEFAULT_USER_TEXT_MODEL
+  const selectedLanguage = settingsQuery.data?.language ?? DEFAULT_USER_LANGUAGE
   const soundsEnabled = settingsQuery.data?.soundsEnabled ?? DEFAULT_SOUNDS_ENABLED
   const disabled = authIsLoading || !user
   const isBusy = settingsQuery.isPending || updateSettings.isPending
@@ -52,6 +63,14 @@ export function SettingsDialog() {
     }
 
     updateSettings.mutate({ textModel: value })
+  }
+
+  function updateLanguage(value: string) {
+    if (!isUserLanguage(value) || value === selectedLanguage) {
+      return
+    }
+
+    updateSettings.mutate({ language: value })
   }
 
   function updateSoundsEnabled(checked: boolean) {
@@ -120,6 +139,31 @@ export function SettingsDialog() {
                     </SelectItem>
                   )
                 })}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="language">Language</Label>
+            <Select
+              disabled={isBusy}
+              onValueChange={updateLanguage}
+              value={selectedLanguage}
+            >
+              <SelectTrigger className="w-full" id="language">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="w-[min(var(--radix-select-trigger-width),calc(100vw-2rem))]">
+                {USER_LANGUAGE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <img
+                      alt=""
+                      className="h-3.5 w-5 rounded-[2px] object-cover shadow-sm"
+                      src={LANGUAGE_FLAGS[option.value]}
+                    />
+                    <span>{option.label}</span>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
